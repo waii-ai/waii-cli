@@ -77,11 +77,54 @@ const queryCreate = (params: CmdParams) => {
 }
 
 const queryUpdate = (params: CmdParams) => {
-    console.log("query update", params);
+    let query = fs.readFileSync(0, 'utf-8');
+    WAII.Query.describe(
+        {
+            query: query
+        },
+        (result) => {
+            WAII.Query.generate(
+                {
+                    ask: params.vals[0],
+                    tweak_history: [{ask: result.summary, sql: query}]
+                },
+                (result) => {
+                    console.log(result.query);
+                    process.exit(0);
+                },
+                (detail) => {
+                    console.error(JSON.stringify(detail));
+                    process.exit(-1);
+                }
+            );
+        },
+        (detail) => {
+            console.error(JSON.stringify(detail));
+            process.exit(-1);
+        }
+    );
 }
 
 const queryExplain = (params: CmdParams) => {
-    console.log("query explain", params);
+    let query = fs.readFileSync(0, 'utf-8');
+    WAII.Query.describe(
+        {
+            query: query
+        },
+        (result) => {
+            console.log("Summary: \n--------");
+            console.log(result.summary);
+            console.log("\nTables: \n-------");
+            console.log(result.tables.map((tname) => {return tname.schema_name + tname.table_name;}).join('\n'));
+            console.log("\nSteps: \n------");
+            console.log(result.detailed_steps.join('\n\n'));
+            process.exit(0);
+        },
+        (detail) => {
+            console.error(JSON.stringify(detail));
+            process.exit(-1);
+        }
+    );
 }
 
 const queryRewrite = (params: CmdParams) => {
@@ -96,6 +139,46 @@ const queryDiff = (params: CmdParams) =>  {
     console.log("query diff", params);
 }
 
+const queryRun = (params: CmdParams) => {
+    let query = fs.readFileSync(0, 'utf-8');
+    WAII.Query.submit(
+        {
+            query: query
+        },
+        (result) => {
+            WAII.Query.getResults(
+                {
+                    query_id: result.query_id
+                },
+                (result) => {
+                    console.log(result.column_definitions.map((c) => {return c.name;}).join(', '));
+                    for (const row of result.rows) {
+                        let str = '';
+                        let first = true;
+                        for (const column of result.column_definitions) {
+                            if (!first) {
+                                str += ", ";
+                            }
+                            first = false;
+                            str += row[column.name.toLocaleLowerCase()];
+                        }
+                        console.log(str);
+                        process.exit(0);
+                    }
+                },
+                (detail) => {
+                    console.error(JSON.stringify(detail));
+                    process.exit(-1);        
+                }
+            );
+        },
+        (detail) => {
+            console.error(JSON.stringify(detail));
+            process.exit(-1);
+        }
+    );
+}
+
 const callTree = {
     query: {
         create: queryCreate,
@@ -103,7 +186,8 @@ const callTree = {
         explain: queryExplain,
         rewrite: queryRewrite,
         transcode: queryTranscode,
-        diff: queryDiff
+        diff: queryDiff,
+        run: queryRun
     }
 }
 
