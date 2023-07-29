@@ -5,6 +5,9 @@
     "waii-sdk-js": "portal:/Users/gunther/waii/waii-sdk-js"
   },
   "dependencies": {
-    "ts-node": "^10.9.1"
+    "fs": "^0.0.1-security",
+    "ts-node": "^10.9.1",
+    "uuid": "^9.0.0",
+    "yaml": "^2.3.1"
   }
 }

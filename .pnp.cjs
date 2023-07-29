@@ -28,7 +28,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         [null, {\
           "packageLocation": "./",\
           "packageDependencies": [\
-            ["ts-node", "virtual:f6c2ea77327896809cfd5fcb0ce86a44b04c86d6913180ad619823c82d0ad2193f3c72af6d1878a49519fc7c370da799725e8dc613fae93b0fe42874de9d2479#npm:10.9.1"]\
+            ["fs", "npm:0.0.1-security"],\
+            ["ts-node", "virtual:f6c2ea77327896809cfd5fcb0ce86a44b04c86d6913180ad619823c82d0ad2193f3c72af6d1878a49519fc7c370da799725e8dc613fae93b0fe42874de9d2479#npm:10.9.1"],\
+            ["uuid", "npm:9.0.0"],\
+            ["yaml", "npm:2.3.1"]\
           ],\
           "linkType": "SOFT"\
         }]\
@@ -153,6 +156,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["fs", [\
+        ["npm:0.0.1-security", {\
+          "packageLocation": "./.yarn/cache/fs-npm-0.0.1-security-5060b47e87-53c6230e1f.zip/node_modules/fs/",\
+          "packageDependencies": [\
+            ["fs", "npm:0.0.1-security"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["make-error", [\
         ["npm:1.3.6", {\
           "packageLocation": "./.yarn/cache/make-error-npm-1.3.6-ccb85d9458-b86e5e0e25.zip/node_modules/make-error/",\
@@ -207,6 +219,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["uuid", [\
+        ["npm:9.0.0", {\
+          "packageLocation": "./.yarn/cache/uuid-npm-9.0.0-46c41e3e43-8dd2c83c43.zip/node_modules/uuid/",\
+          "packageDependencies": [\
+            ["uuid", "npm:9.0.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["v8-compile-cache-lib", [\
         ["npm:3.0.1", {\
           "packageLocation": "./.yarn/cache/v8-compile-cache-lib-npm-3.0.1-4886071ece-78089ad549.zip/node_modules/v8-compile-cache-lib/",\
@@ -221,9 +242,21 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./",\
           "packageDependencies": [\
             ["waii-cli", "workspace:."],\
-            ["ts-node", "virtual:f6c2ea77327896809cfd5fcb0ce86a44b04c86d6913180ad619823c82d0ad2193f3c72af6d1878a49519fc7c370da799725e8dc613fae93b0fe42874de9d2479#npm:10.9.1"]\
+            ["fs", "npm:0.0.1-security"],\
+            ["ts-node", "virtual:f6c2ea77327896809cfd5fcb0ce86a44b04c86d6913180ad619823c82d0ad2193f3c72af6d1878a49519fc7c370da799725e8dc613fae93b0fe42874de9d2479#npm:10.9.1"],\
+            ["uuid", "npm:9.0.0"],\
+            ["yaml", "npm:2.3.1"]\
           ],\
           "linkType": "SOFT"\
+        }]\
+      ]],\
+      ["yaml", [\
+        ["npm:2.3.1", {\
+          "packageLocation": "./.yarn/cache/yaml-npm-2.3.1-743f5688d1-2c7bc9a7cd.zip/node_modules/yaml/",\
+          "packageDependencies": [\
+            ["yaml", "npm:2.3.1"]\
+          ],\
+          "linkType": "HARD"\
         }]\
       ]],\
       ["yn", [\
