@@ -163,8 +163,8 @@ const queryRun = (params: CmdParams) => {
                             str += row[column.name.toLocaleLowerCase()];
                         }
                         console.log(str);
-                        process.exit(0);
                     }
+                    process.exit(0);
                 },
                 (detail) => {
                     console.error(JSON.stringify(detail));
