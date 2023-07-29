@@ -1,0 +1,10 @@
+{
+  "name": "waii-cli",
+  "packageManager": "yarn@3.6.1",
+  "resolutions": {
+    "waii-sdk-js": "portal:/Users/gunther/waii/waii-sdk-js"
+  },
+  "dependencies": {
+    "ts-node": "^10.9.1"
+  }
+}
