@@ -211,6 +211,77 @@ const contextDelete = async (params: CmdParams) => {
     printStatements(result.updated);
 }
 
+const databaseDescribe = async (params: CmdParams) => {
+    let result = await WAII.Database.getCatalogs();
+    if (!result.catalogs || ! result.catalogs[0].schemas) {
+        console.log("Database is empty.");
+    }
+    console.log("Database:\n---------");
+    console.log(result.catalogs[0].schemas[0].name.database_name);
+    console.log("\nSchemas:\n--------")
+    for (const schema of result.catalogs[0].schemas) {
+        console.log(schema.name.database_name+'.'+schema.name.schema_name);
+    }
+}
+
+const schemaDescribe = async (params: CmdParams) => {
+    let result = await WAII.Database.getCatalogs();
+    let schema = null;
+    for (const s of result.catalogs[0].schemas) {
+        if(s.name.schema_name == params.vals[0]) {
+            schema = s;
+        }
+    }
+    if (!schema) {
+        console.error("Can't find schema: "+params.vals[0]);
+        process.exit(-1);
+    }
+    console.log("Schema:\n-------");
+    console.log(schema.name.database_name+"."+schema.name.schema_name);
+    console.log("\nDescription:\n------------");
+    console.log(schema.description.summary);
+    console.log("\nTables:\n-------")
+    for (const table of schema.tables) {
+        console.log(table.name.database_name+'.'+table.name.schema_name+'.'+table.name.table_name);
+    }
+    console.log("\nCommon Questions:\n-----------------");
+    for (const q of schema.description.common_questions) {
+        console.log(q);
+    }
+}
+
+const tableDescribe = async (params: CmdParams) => {
+    let result = await WAII.Database.getCatalogs();
+    
+    let schema = null;
+    for (const s of result.catalogs[0].schemas) {
+        if(params.vals[0].startsWith(s.name.schema_name)) {
+            schema = s;
+        }
+    }
+
+    let table = null;
+    for (const t of schema.tables) {
+        if (params.vals[0] === t.name.schema_name+'.'+t.name.table_name) {
+            table = t;
+        }
+    }
+
+    if (!schema || !table) {
+        console.error("Can't find table: "+params.vals[0]);
+        process.exit(-1);
+    }
+
+    console.log("Table:\n------");
+    console.log(table.name.schema_name+"."+table.name.table_name);
+    console.log("\nDescription:\n------------");
+    console.log(table.description);
+    console.log("\nColumns:\n--------")
+    for (const column of table.columns) {
+        console.log(column.name+': '+column.type);
+    }
+}
+
 const callTree = {
     query: {
         create: queryCreate,
@@ -227,11 +298,18 @@ const callTree = {
         add: databaseAdd,
         delete: databaseDelete,
         activate: databaseActivate,
+        describe: databaseDescribe,
     },
     context: {
         list: contextList,
         add: contextAdd,
         delete: contextDelete
+    },
+    schema: {
+        describe: schemaDescribe
+    },
+    table: {
+        describe: tableDescribe
     }
 };
 
