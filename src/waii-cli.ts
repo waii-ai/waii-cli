@@ -2,6 +2,10 @@ import process = require("node:process")
 import WAII from '../../waii-sdk-js'
 import * as fs from 'fs'
 import * as YAML from 'yaml'
+import { DBConnection, ModifyDBConnectionRequest } from "../../waii-sdk-js/clients/database/src/Database";
+import { SemanticStatement } from "../../waii-sdk-js/clients/semantic-context/src/SemanticContext";
+
+const CONF_FILE = '~/.waii/conf.yaml';
 
 const help = () => {
     console.log('Usage: waii <cmd> <subcommand> <values> <flags>');
@@ -12,7 +16,7 @@ type CmdParams = {
     cmd: string,
     scmd: string,
     vals: string[],
-    opts: { flag: string, value?: string }[]
+    opts: {}
 }
 
 const parseInput = (args: string[]) => {
@@ -24,8 +28,10 @@ const parseInput = (args: string[]) => {
         cmd: process.argv[2].trim().toLowerCase(),
         scmd: process.argv[3].trim().toLowerCase(),
         vals: [],
-        opts: []
+        opts: {}
     }
+
+    let flags = [];
 
     let inValues = true;
     let inFlag = false;
@@ -42,19 +48,23 @@ const parseInput = (args: string[]) => {
 
         if (inFlag) {
             if (a.startsWith('-')) {
-                params.opts.push({ flag: a });
+                flags.push({ flag: a });
             } else {
                 inFlag = false;
-                params.opts[params.opts.length - 1].value = a;
+                flags[flags.length - 1].value = a;
             }
         } else {
             if (a.startsWith('-')) {
                 inFlag = true;
-                params.opts.push({ flag: a })
+                flags.push({ flag: a })
             } else {
                 help();
             }
         }
+    }
+
+    for (const f of flags) {
+        params.opts[f.flag.slice(1)] = f.value;
     }
 
     return params;
@@ -84,19 +94,21 @@ const queryExplain = async (params: CmdParams) => {
     console.log(result.tables.map((tname) => { return tname.schema_name + tname.table_name; }).join('\n'));
     console.log("\nSteps: \n------");
     console.log(result.detailed_steps.join('\n\n'));
-    process.exit(0);
 }
 
-const queryRewrite = (params: CmdParams) => {
-    console.log("query rewrite", params);
+const queryRewrite = async (params: CmdParams) => {
+    params.vals[0] = "Rewrite the query to proudce the same output in a more readable way.";
+    await queryUpdate(params);
+} 
+
+const queryTranscode = async (params: CmdParams) => {
+    params.vals[0] = "Rewrite the query to produce the same output but use "+params.vals[0]+" instead of snowflake.";
+    await queryUpdate(params);
 }
 
-const queryTranscode = (params: CmdParams) => {
-    console.log("query transcode", params);
-}
-
-const queryDiff = (params: CmdParams) => {
-    console.log("query diff", params);
+const queryDiff = async (params: CmdParams) => {
+    console.error("Query diff not yet implemented.");
+    process.exit(-1);
 }
 
 const queryRun = async (params: CmdParams) => {
@@ -117,6 +129,88 @@ const queryRun = async (params: CmdParams) => {
     }
 }
 
+const printConnectors = (connectors: DBConnection[]) => {
+    console.log("account, database, warehouse, role, user, key");
+    for (const connection of connectors) {
+        console.log(
+            connection.account_name+', '+
+            connection.database+', '+
+            connection.warehouse+', '+
+            connection.role+', '+
+            connection.username+', '+
+            connection.key+', ');
+    }
+}
+
+const databaseList = async (params: CmdParams) => {
+    let result = await WAII.Database.getConnections();
+    printConnectors(result.connectors);
+}
+
+const databaseDelete = async (params: CmdParams) => {
+    let result = await WAII.Database.modifyConnections({removed: [params.vals[0]]});
+    printConnectors(result.connectors);
+}
+
+const databaseAdd = async (params: CmdParams) => {
+    let result = await WAII.Database.modifyConnections(
+        {
+            updated: [{
+                key: null,
+                account_name: params.opts['a'],
+                database: params.opts['d'],
+                warehouse: params.opts['w'],
+                role: params.opts['r'],
+                username: params.opts['u'],
+                password: params.opts['p'],
+                db_type: 'snowflake',
+            }]
+        }
+    );
+    printConnectors(result.connectors);
+}
+
+const databaseActivate = async (params: CmdParams) => {
+    WAII.Database.activateConnection(params.vals[0]);
+}
+
+const printStatements = (statements: SemanticStatement[]) => {
+    console.log("id, scope, statement, labels");
+    for (const stmt of statements) {
+        console.log(
+            stmt.id+', '+
+            stmt.scope+', '+
+            stmt.statement+', '+
+            stmt.labels);
+    }
+}
+
+const contextList = async (params: CmdParams) => {
+    let result = await WAII.SemanticContext.getSemanticContext();
+    printStatements(result.semantic_context);
+}
+
+const contextAdd = async (params: CmdParams) => {
+    let stmt: SemanticStatement = new SemanticStatement(
+        params.opts['s'],
+        params.vals[0]
+    );
+    let result = await WAII.SemanticContext.modifySemanticContext(
+        {
+            updated: [stmt]
+        }
+    );
+    printStatements(result.updated);
+}
+
+const contextDelete = async (params: CmdParams) => {
+    let result = await WAII.SemanticContext.modifySemanticContext({
+        updated: [],
+        deleted: params.vals
+    });
+    printStatements(result.updated);
+}
+
 const callTree = {
     query: {
         create: queryCreate,
@@ -126,12 +220,20 @@ const callTree = {
         rewrite: queryRewrite,
         transcode: queryTranscode,
         diff: queryDiff,
-        run: queryRun
+        run: queryRun,
+    },
+    database: {
+        list: databaseList,
+        add: databaseAdd,
+        delete: databaseDelete,
+        activate: databaseActivate,
+    },
+    context: {
+        list: contextList,
+        add: contextAdd,
+        delete: contextDelete
     }
-}
-
-const params = parseInput(process.argv);
-const CONF_FILE = '~/.waii/conf.yaml';
+};
 
 const initialize = async () => {
     let path = process.env.HOME + CONF_FILE.slice(1);
@@ -144,8 +246,9 @@ const initialize = async () => {
 
 const main = async () => {
     try {
+        let params = parseInput(process.argv);
         let scmdTree = callTree[params.cmd as keyof typeof callTree];
-        let fn = scmdTree[params.scmd as keyof typeof scmdTree];
+        let fn: (CmdParams) => void = scmdTree[params.scmd as keyof typeof scmdTree];
         if (!fn) {
             throw Error("Unknown operation.");
         }
