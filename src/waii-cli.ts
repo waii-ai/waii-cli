@@ -6,6 +6,7 @@ import { parseInput, CmdParams } from "./cmd-line-parser";
 import { databaseCommands, schemaCommands, tableCommands } from "./database-commands";
 import { queryCommands } from "./query-commands";
 import { semanticCommands } from "./semantic-commands";
+import { historyCommands } from './history-commands';
 
 const CONF_FILE = '~/.waii/conf.yaml';
 
@@ -19,7 +20,8 @@ const callTree = {
     database: databaseCommands,
     context: semanticCommands,
     schema: schemaCommands,
-    table: tableCommands
+    table: tableCommands,
+    history: historyCommands
 };
 
 const initialize = async () => {
