@@ -15,7 +15,15 @@ const printStatements = (statements: SemanticStatement[]) => {
 
 const contextList = async (params: CmdParams) => {
     let result = await WAII.SemanticContext.getSemanticContext();
-    printStatements(result.semantic_context);
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log(JSON.stringify(result, null, 2));
+            break;
+        }
+        default: {
+            printStatements(result.semantic_context);
+        }
+    }
 }
 
 const contextAdd = async (params: CmdParams) => {
@@ -28,7 +36,15 @@ const contextAdd = async (params: CmdParams) => {
             updated: [stmt]
         }
     );
-    printStatements(result.updated);
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log(JSON.stringify(result, null, 2));
+            break;
+        }
+        default: {
+            printStatements(result.updated);
+        }
+    }
 }
 
 const contextDelete = async (params: CmdParams) => {
@@ -36,7 +52,15 @@ const contextDelete = async (params: CmdParams) => {
         updated: [],
         deleted: params.vals
     });
-    printStatements(result.updated);
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log(JSON.stringify(result, null, 2));
+            break;
+        }
+        default: {
+            printStatements(result.updated);
+        }
+    }
 }
 
 const semanticCommands = {

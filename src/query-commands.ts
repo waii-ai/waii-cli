@@ -3,7 +3,15 @@ import { CmdParams } from './cmd-line-parser';
 
 const queryCreate = async (params: CmdParams) => {
     let result = await WAII.Query.generate({ ask: params.vals[0] });
-    console.log(result.query);
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log(JSON.stringify(result, null, 2));
+            break;
+        }
+        default: {
+            console.log(result.query);
+        }
+    }
 }
 
 const queryUpdate = async (params: CmdParams) => {
@@ -13,18 +21,34 @@ const queryUpdate = async (params: CmdParams) => {
         ask: params.vals[0],
         tweak_history: [{ ask: descResult.summary, sql: query }]
     });
-    console.log(genResult.query);
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log(JSON.stringify(genResult, null, 2));
+            break;
+        }
+        default: {
+            console.log(genResult.query);
+        }
+    }
 }
 
 const queryExplain = async (params: CmdParams) => {
     let query = params.input;
     let result = await WAII.Query.describe({ query: query });
-    console.log("Summary: \n--------");
-    console.log(result.summary);
-    console.log("\nTables: \n-------");
-    console.log(result.tables.map((tname) => { return tname.schema_name + tname.table_name; }).join('\n'));
-    console.log("\nSteps: \n------");
-    console.log(result.detailed_steps.join('\n\n'));
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log(JSON.stringify(result, null, 2));
+            break;
+        }
+        default: {
+            console.log("Summary: \n--------");
+            console.log(result.summary);
+            console.log("\nTables: \n-------");
+            console.log(result.tables.map((tname) => { return tname.schema_name + tname.table_name; }).join('\n'));
+            console.log("\nSteps: \n------");
+            console.log(result.detailed_steps.join('\n\n'));
+        }
+    }
 }
 
 const queryRewrite = async (params: CmdParams) => {
@@ -45,18 +69,26 @@ const queryDiff = async (params: CmdParams) => {
 const queryRun = async (params: CmdParams) => {
     let query = params.input;
     let result = await WAII.Query.run({ query: query });
-    console.log(result.column_definitions.map((c) => { return c.name; }).join(', '));
-    for (const row of result.rows) {
-        let str = '';
-        let first = true;
-        for (const column of result.column_definitions) {
-            if (!first) {
-                str += ", ";
-            }
-            first = false;
-            str += row[column.name.toLocaleLowerCase()];
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log(JSON.stringify(result, null, 2));
+            break;
         }
-        console.log(str);
+        default: {
+            console.log(result.column_definitions.map((c) => { return c.name; }).join(', '));
+            for (const row of result.rows) {
+                let str = '';
+                let first = true;
+                for (const column of result.column_definitions) {
+                    if (!first) {
+                        str += ", ";
+                    }
+                    first = false;
+                    str += row[column.name.toLocaleLowerCase()];
+                }
+                console.log(str);
+            }
+        }
     }
 }
 

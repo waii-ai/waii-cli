@@ -54,7 +54,11 @@ const parseInput = (args: string[]) => {
     }
 
     for (const f of flags) {
-        params.opts[f.flag.slice(1)] = f.value;
+        let cnt = 1;
+        if (f.flag.startsWith('--')) {
+            cnt = 2;
+        }
+        params.opts[f.flag.slice(cnt)] = f.value;
     }
 
     try {
