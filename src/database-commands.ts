@@ -131,14 +131,15 @@ const tableDescribe = async (params: CmdParams) => {
 
     let schema = null;
     for (const s of result.catalogs[0].schemas) {
-        if (params.vals[0].startsWith(s.name.schema_name)) {
+        if (params.vals[0].toLowerCase().startsWith(s.name.schema_name.toLowerCase())) {
             schema = s;
         }
     }
 
     let table = null;
     for (const t of schema.tables) {
-        if (params.vals[0] === t.name.schema_name + '.' + t.name.table_name) {
+        if (params.vals[0].toLocaleLowerCase() ===
+            (t.name.schema_name.toLowerCase() + '.' + t.name.table_name.toLowerCase())) {
             table = t;
         }
     }
