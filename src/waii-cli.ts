@@ -11,8 +11,40 @@ import { historyCommands } from './history-commands';
 const CONF_FILE = '~/.waii/conf.yaml';
 
 const help = () => {
-    console.log('Usage: waii <cmd> <subcommand> <values> <flags>');
+    console.log('Usage: waii-cli <cmd> <subcommand> <values> <flags>');
+    console.log('')
+    console.log('Commands and subcommands')
+    console.log('========================')
+    printCommands(callTree)
+    console.log('')
+    console.log('Examples')
+    console.log('========')
+    console.log('   waii-cli database list')
+    console.log('   waii-cli database list -format=json')
+    console.log('   waii-cli context list')
+    console.log('   waii-cli context list -format=json')
+    console.log('   waii-cli schema describe schema_name')
+    console.log('   waii-cli table describe schema_name.table_name')
+    console.log('   waii-cli history')
+    console.log('   waii-cli history list -format=json')
     process.exit(-1);
+}
+
+/**
+ * Print all commands and its sub commands.
+ * Ideally have to use args parser for printing help better.
+ * @param commands
+ * @param prefix
+ */
+function printCommands(commands: any, prefix = '') {
+    for (const key in commands) {
+        if (typeof commands[key] === 'object') {
+            console.log(prefix + key + ':');
+            printCommands(commands[key], prefix + '  ');
+        } else {
+            console.log(prefix + key);
+        }
+    }
 }
 
 const callTree = {
