@@ -21,7 +21,7 @@ npm install -g waii-cli
 3. Set your API key.
    - Use www.waii.ai to get your API key.
    - Create ~/.waii/yaml.conf and add your api key.
-```bash
+```yaml
 apiKey: <your key>
 ```
 
