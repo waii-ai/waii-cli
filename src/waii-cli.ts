@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import WAII from 'waii-sdk-js'
 import process = require("node:process")
 import * as fs from 'fs'
@@ -11,7 +13,7 @@ import { historyCommands } from './history-commands';
 const CONF_FILE = '~/.waii/conf.yaml';
 
 const help = () => {
-    console.log('Usage: waii-cli <cmd> <subcommand> <values> <flags>');
+    console.log('Usage: waii <cmd> <subcommand> <values> <flags>');
     console.log('')
     console.log('Commands and subcommands')
     console.log('========================')
@@ -19,14 +21,14 @@ const help = () => {
     console.log('')
     console.log('Examples')
     console.log('========')
-    console.log('   waii-cli database list')
-    console.log('   waii-cli database list -format=json')
-    console.log('   waii-cli context list')
-    console.log('   waii-cli context list -format=json')
-    console.log('   waii-cli schema describe schema_name')
-    console.log('   waii-cli table describe schema_name.table_name')
-    console.log('   waii-cli history')
-    console.log('   waii-cli history list -format=json')
+    console.log('   waii database list')
+    console.log('   waii database list -format=json')
+    console.log('   waii context list')
+    console.log('   waii context list -format=json')
+    console.log('   waii schema describe schema_name')
+    console.log('   waii table describe schema_name.table_name')
+    console.log('   waii history')
+    console.log('   waii history list -format=json')
     process.exit(-1);
 }
 
