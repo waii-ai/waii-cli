@@ -90,6 +90,7 @@ const databaseDescribe = async (params: CmdParams) => {
             console.log(result.catalogs[0].schemas[0].name.database_name);
             console.log("\nSchemas:\n--------")
             for (const schema of result.catalogs[0].schemas) {
+                if (!schema.tables) schema.tables = [];
                 console.log(schema.name.database_name + '.' + schema.name.schema_name + " (" + schema.tables.length + " tables)");
             }
         }
@@ -170,6 +171,7 @@ const tableDescribe = async (params: CmdParams) => {
 
     let table = null;
     for (const t of (schema.tables ? schema.tables : [])) {
+        if (!t.name.schema_name) t.name.schema_name = '';
         if (params.vals[0].toLocaleLowerCase() ===
             (t.name.schema_name.toLowerCase() + '.' + t.name.table_name.toLowerCase())) {
             table = t;

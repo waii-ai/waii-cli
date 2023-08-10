@@ -17,6 +17,12 @@ const printHistory = (history: GeneratedQueryHistoryEntry[]) => {
         if (!entry.query.tables) {
             entry.query.tables = [];
         }
+        if (!entry.request.ask) {
+            entry.request.ask = '';
+        }
+        if (!entry.query.query) {
+            entry.query.query = '';
+        }
         console.log("" +
             entry.query.uuid + "| " +
             entry.query.liked + "| " +
