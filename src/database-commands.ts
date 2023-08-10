@@ -1,17 +1,20 @@
-import WAII from '../../waii-sdk-js'
-import { DBConnection, ModifyDBConnectionRequest } from "../../waii-sdk-js/clients/database/src/Database";
+import WAII from 'waii-sdk-js'
+import { DBConnection, ModifyDBConnectionRequest } from "waii-sdk-js/dist/clients/database/src/Database";
 import { CmdParams } from './cmd-line-parser';
 
-const printConnectors = (connectors: DBConnection[]) => {
+const printConnectors = (connectors?: DBConnection[]) => {
     console.log("account, database, warehouse, role, user, key");
-    for (const connection of connectors) {
-        console.log(
-            connection.account_name + ', ' +
-            connection.database + ', ' +
-            connection.warehouse + ', ' +
-            connection.role + ', ' +
-            connection.username + ', ' +
-            connection.key + ', ');
+
+    if (connectors) {
+        for (const connection of connectors) {
+            console.log(
+                connection.account_name + ', ' +
+                connection.database + ', ' +
+                connection.warehouse + ', ' +
+                connection.role + ', ' +
+                connection.username + ', ' +
+                connection.key + ', ');
+        }
     }
 }
 
@@ -45,7 +48,7 @@ const databaseAdd = async (params: CmdParams) => {
     let result = await WAII.Database.modifyConnections(
         {
             updated: [{
-                key: null,
+                key: '',
                 account_name: params.opts['a'],
                 database: params.opts['d'],
                 warehouse: params.opts['w'],
@@ -81,6 +84,7 @@ const databaseDescribe = async (params: CmdParams) => {
         default: {
             if (!result.catalogs || !result.catalogs[0].schemas) {
                 console.log("Database is empty.");
+                return;
             }
             console.log("Database:\n---------");
             console.log(result.catalogs[0].schemas[0].name.database_name);
@@ -95,6 +99,14 @@ const databaseDescribe = async (params: CmdParams) => {
 const schemaDescribe = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
     let schema = null;
+    if (!result.catalogs || result.catalogs.length === 0) {
+        console.log("No databases configured.");
+        return;
+    }
+    if (!result.catalogs[0].schemas) {
+        console.log("No schemas found");
+        return;
+    }
     for (const s of result.catalogs[0].schemas) {
         if (s.name.schema_name == params.vals[0]) {
             schema = s;
@@ -102,7 +114,7 @@ const schemaDescribe = async (params: CmdParams) => {
     }
     if (!schema) {
         console.error("Can't find schema: " + params.vals[0]);
-        process.exit(-1);
+        return;
     }
     switch (params.opts['format']) {
         case 'json': {
@@ -113,14 +125,20 @@ const schemaDescribe = async (params: CmdParams) => {
             console.log("Schema:\n-------");
             console.log(schema.name.database_name + "." + schema.name.schema_name);
             console.log("\nDescription:\n------------");
-            console.log(schema.description.summary);
-            console.log("\nTables:\n-------")
-            for (const table of schema.tables) {
-                console.log(table.name.database_name + '.' + table.name.schema_name + '.' + table.name.table_name);
+            if (schema.description && schema.description.summary) {
+                console.log(schema.description.summary);
+                console.log("\nTables:\n-------")
             }
-            console.log("\nCommon Questions:\n-----------------");
-            for (const q of schema.description.common_questions) {
-                console.log(q);
+            if (schema.tables) {
+                for (const table of schema.tables) {
+                    console.log(table.name.database_name + '.' + table.name.schema_name + '.' + table.name.table_name);
+                }
+            }
+            if (schema.description && schema.description.common_questions) {
+                console.log("\nCommon Questions:\n-----------------");
+                for (const q of schema.description.common_questions) {
+                    console.log(q);
+                }
             }
         }
     }
@@ -128,6 +146,15 @@ const schemaDescribe = async (params: CmdParams) => {
 
 const tableDescribe = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
+    if (!result.catalogs || result.catalogs.length === 0) {
+        console.log("No databases configured.");
+        return;
+    }
+
+    if (!result.catalogs[0].schemas) {
+        console.log("No schemas found.");
+        return;
+    }
 
     let schema = null;
     for (const s of result.catalogs[0].schemas) {
@@ -136,8 +163,13 @@ const tableDescribe = async (params: CmdParams) => {
         }
     }
 
+    if (!schema) {
+        console.log("No matching schema found.");
+        return;
+    }
+
     let table = null;
-    for (const t of schema.tables) {
+    for (const t of (schema.tables ? schema.tables : [])) {
         if (params.vals[0].toLocaleLowerCase() ===
             (t.name.schema_name.toLowerCase() + '.' + t.name.table_name.toLowerCase())) {
             table = t;
@@ -159,7 +191,7 @@ const tableDescribe = async (params: CmdParams) => {
             console.log("\nDescription:\n------------");
             console.log(table.description);
             console.log("\nColumns:\n--------")
-            for (const column of table.columns) {
+            for (const column of (table.columns ? table.columns : [])) {
                 console.log(column.name + ': ' + column.type);
             }
         }

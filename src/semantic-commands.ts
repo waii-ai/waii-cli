@@ -1,9 +1,13 @@
-import WAII from '../../waii-sdk-js'
+import WAII from 'waii-sdk-js'
 import { CmdParams } from './cmd-line-parser';
-import { SemanticStatement } from "../../waii-sdk-js/clients/semantic-context/src/SemanticContext";
+import { SemanticStatement } from "waii-sdk-js/dist/clients/semantic-context/src/SemanticContext";
 
-const printStatements = (statements: SemanticStatement[]) => {
+const printStatements = (statements?: SemanticStatement[]) => {
     console.log("id, scope, statement, labels");
+    if (!statements) {
+        console.log("No statements found.");
+        return;
+    }
     for (const stmt of statements) {
         console.log(
             stmt.id + ', ' +

@@ -4,7 +4,7 @@ type CmdParams = {
     cmd: string,
     scmd: string,
     vals: string[],
-    opts: {},
+    opts: {[key: string]: string},
     input: string
 }
 
@@ -38,7 +38,7 @@ const parseInput = (args: string[]) => {
 
         if (inFlag) {
             if (a.startsWith('-')) {
-                flags.push({ flag: a });
+                flags.push({ flag: a, value: '' });
             } else {
                 inFlag = false;
                 flags[flags.length - 1].value = a;
@@ -46,7 +46,7 @@ const parseInput = (args: string[]) => {
         } else {
             if (a.startsWith('-')) {
                 inFlag = true;
-                flags.push({ flag: a })
+                flags.push({ flag: a, value: '' })
             } else {
                 throw Error('Command line flags can only have one value.');
             }

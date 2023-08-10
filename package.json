@@ -1,13 +1,29 @@
 {
   "name": "waii-cli",
-  "packageManager": "yarn@3.6.1",
-  "resolutions": {
-    "waii-sdk-js": "portal:/Users/gunther/waii/waii-sdk-js"
+  "version": "1.0.0",
+  "bin": {
+    "waii": "dist/waii-cli.js"
+  },
+  "main": "dist/waii-cli.js",
+  "types": "dist/waii-cli.d.ts",
+  "prepublish": "tsc",
+  "keywords": [
+    "SQL",
+    "AI",
+    "CLI"
+  ],
+  "homepage": "https://www.waii.ai",
+  "author": "Waii, Inc. <support@waii.ai> (https://www.waii.ai)",
+  "license": "Apache-2.0",
+  "repository": {
+    "url": "https://github.com/waii-ai/waii-cli",
+    "type": "git"
   },
   "dependencies": {
     "fs": "^0.0.1-security",
     "ts-node": "^10.9.1",
     "uuid": "^9.0.0",
+    "waii-sdk-js": "^1.0.1",
     "yaml": "^2.3.1"
   }
 }

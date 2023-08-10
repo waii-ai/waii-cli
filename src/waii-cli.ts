@@ -1,4 +1,4 @@
-import WAII from '../../waii-sdk-js'
+import WAII from 'waii-sdk-js'
 import process = require("node:process")
 import * as fs from 'fs'
 import * as YAML from 'yaml'
@@ -62,14 +62,16 @@ const initialize = async () => {
     let config = YAML.parse(file);
     WAII.initialize(config.url, config.apiKey);
     let result = await WAII.Database.getConnections({});
-    WAII.Database.activateConnection(result.connectors[2].key);
+    if (result.connectors && result.connectors.length > 0) {
+        WAII.Database.activateConnection(result.connectors[0].key);
+    }
 }
 
 const main = async () => {
     try {
         let params = parseInput(process.argv);
         let scmdTree = callTree[params.cmd as keyof typeof callTree];
-        let fn: (CmdParams) => void = scmdTree[params.scmd as keyof typeof scmdTree];
+        let fn: (arg: CmdParams) => void = scmdTree[params.scmd as keyof typeof scmdTree];
         if (!fn) {
             throw Error("Unknown operation.");
         }
@@ -77,7 +79,11 @@ const main = async () => {
         await fn(params);
         process.exit(0);
     } catch (error) {
-        console.log(error.message);
+        if (error instanceof Error) {
+            console.log(error.message);
+        } else {
+            console.log(error);
+        }
         help();
     }
 }

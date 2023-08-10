@@ -1,5 +1,5 @@
-import WAII from '../../waii-sdk-js'
-import { GeneratedQueryHistoryEntry } from '../../waii-sdk-js/clients/history/src/History';
+import WAII from 'waii-sdk-js'
+import { GeneratedQueryHistoryEntry } from 'waii-sdk-js/dist/clients/history/src/History';
 import { CmdParams } from './cmd-line-parser';
 
 /**
@@ -11,6 +11,12 @@ import { CmdParams } from './cmd-line-parser';
 const printHistory = (history: GeneratedQueryHistoryEntry[]) => {
     console.log("uuid|favorite|question|query|tables|timestamp");
     for (const entry of history) {
+        if (!entry.query || !entry.request) {
+            continue;
+        }
+        if (!entry.query.tables) {
+            entry.query.tables = [];
+        }
         console.log("" +
             entry.query.uuid + "| " +
             entry.query.liked + "| " +
@@ -30,6 +36,10 @@ const historyList = async (params: CmdParams) => {
             break;
         }
         default: {
+            if (!result.history) {
+                console.log("No history found.");
+                return;
+            }
             printHistory(result.history);
         }
     }

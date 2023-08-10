@@ -1,6 +1,10 @@
-import WAII from '../../waii-sdk-js'
+import WAII from 'waii-sdk-js'
 import { CmdParams } from './cmd-line-parser';
 
+export interface IIndexable {
+    [key: string]: any;
+}
+  
 const queryCreate = async (params: CmdParams) => {
     let result = await WAII.Query.generate({ ask: params.vals[0] });
     switch (params.opts['format']) {
@@ -44,9 +48,9 @@ const queryExplain = async (params: CmdParams) => {
             console.log("Summary: \n--------");
             console.log(result.summary);
             console.log("\nTables: \n-------");
-            console.log(result.tables.map((tname) => { return tname.schema_name + tname.table_name; }).join('\n'));
+            console.log((result.tables?result.tables:[]).map((tname) => { return tname.schema_name + tname.table_name; }).join('\n'));
             console.log("\nSteps: \n------");
-            console.log(result.detailed_steps.join('\n\n'));
+            console.log((result.detailed_steps?result.detailed_steps:[]).join('\n\n'));
         }
     }
 }
@@ -75,16 +79,18 @@ const queryRun = async (params: CmdParams) => {
             break;
         }
         default: {
-            console.log(result.column_definitions.map((c) => { return c.name; }).join(', '));
-            for (const row of result.rows) {
+            if (result.column_definitions) {
+                console.log(result.column_definitions.map((c) => { return c.name; }).join(', '));
+            }
+            for (const row of (result.rows ? result.rows : [])) {
                 let str = '';
                 let first = true;
-                for (const column of result.column_definitions) {
+                for (const column of (result.column_definitions ? result.column_definitions : [])) {
                     if (!first) {
                         str += ", ";
                     }
                     first = false;
-                    str += row[column.name.toLocaleLowerCase()];
+                    str += (row as IIndexable)[column.name.toLocaleLowerCase()];
                 }
                 console.log(str);
             }
