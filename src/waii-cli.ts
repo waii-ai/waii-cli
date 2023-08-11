@@ -3,6 +3,7 @@
 import WAII from 'waii-sdk-js'
 import process = require("node:process")
 import * as fs from 'fs'
+import * as path from 'path';
 import * as YAML from 'yaml'
 import { parseInput, CmdParams } from "./cmd-line-parser";
 import { databaseCommands, schemaCommands, tableCommands } from "./database-commands";
@@ -11,6 +12,7 @@ import { semanticCommands } from "./semantic-commands";
 import { historyCommands } from './history-commands';
 
 const CONF_FILE = '~/.waii/conf.yaml';
+const DEFAULT_API_KEY_IN_TEMPLATE='<your_waii_api_key_here>'
 
 const help = () => {
     console.log('Usage: waii <cmd> <subcommand> <values> <flags>');
@@ -59,9 +61,34 @@ const callTree = {
 };
 
 const initialize = async () => {
-    let path = process.env.HOME + CONF_FILE.slice(1);
-    const file = fs.readFileSync(path, 'utf8');
+    let configPath = process.env.HOME + CONF_FILE.slice(1);
+
+    // Check if directory doesn't exist
+    let dir = path.dirname(configPath);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true }); // Create directory recursively if it doesn't exist
+    }
+
+    // Check if file doesn't exist
+    if (!fs.existsSync(configPath)) {
+        console.log("here ..")
+        // Create a YAML file with placeholders
+        let placeholderConfig = {
+            url: 'https://tweakit.waii.ai/api/',
+            apiKey: DEFAULT_API_KEY_IN_TEMPLATE,
+        };
+
+        let yamlStr = YAML.stringify(placeholderConfig);
+        fs.writeFileSync(configPath, yamlStr, 'utf8');
+    }
+
+    const file = fs.readFileSync(configPath, 'utf8');
     let config = YAML.parse(file);
+
+    if (config.apiKey == DEFAULT_API_KEY_IN_TEMPLATE || config.apiKey == '') {
+        throw Error("Please provide your Waii API key in the config file: " + configPath)
+    }
+
     WAII.initialize(config.url, config.apiKey);
     let result = await WAII.Database.getConnections({});
     if (result.connectors && result.connectors.length > 0) {
