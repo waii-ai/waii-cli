@@ -90,8 +90,11 @@ const initialize = async () => {
 
     WAII.initialize(config.url, config.apiKey);
     let result = await WAII.Database.getConnections({});
-    if (result.connectors && result.connectors.length > 0) {
-        WAII.Database.activateConnection(result.connectors[0].key);
+
+    if (result.default_db_connection_key) {
+        await WAII.Database.activateConnection(result.default_db_connection_key);
+    } else if (result.connectors && result.connectors.length > 0) {
+        await WAII.Database.activateConnection(result.connectors[0].key);
     }
 }
 

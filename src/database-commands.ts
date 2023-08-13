@@ -14,24 +14,34 @@ const printConnectors = (connectors?: DBConnection[]) => {
         { name: 'user', title: 'username', alignment: 'left' }
     ];
 
-    // Create a new Table with the defined columns
-    const p = new Table({ columns });
+    let default_scope = WAII.Database.getDefaultConnection()
 
-    // If connectors are provided, iterate through them and add each one to the table
+    // If connectors are provided, iterate through them and create a table for each one
     if (connectors) {
         for (const connection of connectors) {
+            // Create a new Table with the defined columns and the connection.key as the title
+            let config = {}
+            if (connection.key == default_scope) {
+                config = { color: 'green' }
+            }
+
+            const p = new Table({ columns, title: connection.key });
+
+            // Add the current connection to the table
             p.addRow({
                 account: connection.account_name,
                 database: connection.database,
                 warehouse: connection.warehouse,
                 role: connection.role,
                 user: connection.username
-            });
+            }, config);
+
+            // Print the table
+            p.printTable();
+
+            console.log("\n")
         }
     }
-
-    // Print the table
-    p.printTable();
 }
 
 
@@ -88,7 +98,7 @@ const databaseAdd = async (params: CmdParams) => {
 }
 
 const databaseActivate = async (params: CmdParams) => {
-    WAII.Database.activateConnection(params.vals[0]);
+    await WAII.Database.activateConnection(params.vals[0]);
 }
 
 const databaseDescribe = async (params: CmdParams) => {

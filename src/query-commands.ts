@@ -5,7 +5,6 @@ export interface IIndexable {
     [key: string]: any;
 }
 
-
 const printQuery = (query: string | undefined) => {
     if (!query) {
         return;
