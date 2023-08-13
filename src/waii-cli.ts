@@ -71,7 +71,6 @@ const initialize = async () => {
 
     // Check if file doesn't exist
     if (!fs.existsSync(configPath)) {
-        console.log("here ..")
         // Create a YAML file with placeholders
         let placeholderConfig = {
             url: 'https://tweakit.waii.ai/api/',
@@ -98,7 +97,7 @@ const initialize = async () => {
 
 const main = async () => {
     try {
-        let params = parseInput(process.argv);
+        let params = await parseInput(process.argv);
         let scmdTree = callTree[params.cmd as keyof typeof callTree];
         let fn: (arg: CmdParams) => void = scmdTree[params.scmd as keyof typeof scmdTree];
         if (!fn) {

@@ -4,6 +4,15 @@ import { CmdParams } from './cmd-line-parser';
 export interface IIndexable {
     [key: string]: any;
 }
+
+
+const printQuery = (query: string | undefined) => {
+    if (!query) {
+        return;
+    }
+    const highlight = require('cli-highlight').highlight
+    console.log(highlight(query, {language: 'sql', ignoreIllegals: true}))
+}
   
 const queryCreate = async (params: CmdParams) => {
     let result = await WAII.Query.generate({ ask: params.vals[0] });
@@ -13,7 +22,7 @@ const queryCreate = async (params: CmdParams) => {
             break;
         }
         default: {
-            console.log(result.query);
+            printQuery(result.query);
         }
     }
 }
@@ -70,6 +79,8 @@ const queryDiff = async (params: CmdParams) => {
     process.exit(-1);
 }
 
+import { Table } from 'console-table-printer';
+
 const queryRun = async (params: CmdParams) => {
     let query = params.input;
     let result = await WAII.Query.run({ query: query });
@@ -79,24 +90,32 @@ const queryRun = async (params: CmdParams) => {
             break;
         }
         default: {
-            if (result.column_definitions) {
-                console.log(result.column_definitions.map((c) => { return c.name; }).join(', '));
-            }
-            for (const row of (result.rows ? result.rows : [])) {
-                let str = '';
-                let first = true;
-                for (const column of (result.column_definitions ? result.column_definitions : [])) {
-                    if (!first) {
-                        str += ", ";
+            if (result.column_definitions && result.rows) {
+                // Define the columns based on the result's column definitions
+                const columns = result.column_definitions.map((c) => {
+                    return { name: c.name, alignment: 'left' }; // you can customize alignment here
+                });
+
+                // Create a new Table with the columns
+                const p = new Table({ columns });
+
+                // Iterate through the rows and add them to the table
+                for (const row of result.rows) {
+                    const rowObj: { [key: string]: any } = {};
+                    for (const column of result.column_definitions) {
+                        rowObj[column.name] = (row as IIndexable)[column.name.toLocaleLowerCase()];
                     }
-                    first = false;
-                    str += (row as IIndexable)[column.name.toLocaleLowerCase()];
+                    p.addRow(rowObj);
                 }
-                console.log(str);
+
+                // Print the table
+                p.printTable();
             }
         }
     }
 }
+
+
 
 const queryCommands = {
     create: queryCreate,

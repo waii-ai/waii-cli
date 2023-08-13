@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+const readline = require('readline');
 
 type CmdParams = {
     cmd: string,
@@ -8,7 +9,22 @@ type CmdParams = {
     input: string
 }
 
-const parseInput = (args: string[]) => {
+async function readStdin() {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    let content = '';
+
+    for await (const line of rl) {
+        content += line + '\n';
+    }
+
+    return content;
+}
+
+const parseInput = async (args: string[]) => {
     if (args.length < 4) {
         throw Error("Too few parameters.")
     }
@@ -61,10 +77,10 @@ const parseInput = (args: string[]) => {
         params.opts[f.flag.slice(cnt)] = f.value;
     }
 
-    try {
-        params.input = fs.readFileSync(0, 'utf-8');
-    } catch (e) {
-        // ignore, not all commands have input
+    if (process.stdin.isTTY) {
+        params.input = '';
+    } else {
+        params.input = await readStdin();
     }
 
     return params;

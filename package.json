@@ -24,6 +24,8 @@
     "ts-node": "^10.9.1",
     "uuid": "^9.0.0",
     "waii-sdk-js": "^1.0.2",
-    "yaml": "^2.3.1"
+    "yaml": "^2.3.1",
+    "console-table-printer": "2.11.2",
+    "cli-highlight": "2.1.11"
   }
 }

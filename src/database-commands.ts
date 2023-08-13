@@ -1,22 +1,39 @@
 import WAII from 'waii-sdk-js'
-import { DBConnection, ModifyDBConnectionRequest } from "waii-sdk-js/dist/clients/database/src/Database";
+import { DBConnection } from "waii-sdk-js/dist/clients/database/src/Database";
 import { CmdParams } from './cmd-line-parser';
 
-const printConnectors = (connectors?: DBConnection[]) => {
-    console.log("account, database, warehouse, role, user, key");
+import { Table } from 'console-table-printer';
 
+const printConnectors = (connectors?: DBConnection[]) => {
+    // Define the columns for the table, excluding the 'key' column
+    const columns = [
+        { name: 'account', title: 'account_name', alignment: 'left' },
+        { name: 'database', title: 'database', alignment: 'left' },
+        { name: 'warehouse', title: 'warehouse', alignment: 'left' },
+        { name: 'role', title: 'role', alignment: 'left' },
+        { name: 'user', title: 'username', alignment: 'left' }
+    ];
+
+    // Create a new Table with the defined columns
+    const p = new Table({ columns });
+
+    // If connectors are provided, iterate through them and add each one to the table
     if (connectors) {
         for (const connection of connectors) {
-            console.log(
-                connection.account_name + ', ' +
-                connection.database + ', ' +
-                connection.warehouse + ', ' +
-                connection.role + ', ' +
-                connection.username + ', ' +
-                connection.key + ', ');
+            p.addRow({
+                account: connection.account_name,
+                database: connection.database,
+                warehouse: connection.warehouse,
+                role: connection.role,
+                user: connection.username
+            });
         }
     }
+
+    // Print the table
+    p.printTable();
 }
+
 
 const databaseList = async (params: CmdParams) => {
     let result = await WAII.Database.getConnections();
