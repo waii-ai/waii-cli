@@ -1,20 +1,27 @@
 import WAII from 'waii-sdk-js'
 import { CmdParams } from './cmd-line-parser';
 import { SemanticStatement } from "waii-sdk-js/dist/clients/semantic-context/src/SemanticContext";
+import {Table} from "console-table-printer";
+import {IIndexable} from "./query-commands";
 
 const printStatements = (statements?: SemanticStatement[]) => {
-    console.log("id, scope, statement, labels");
     if (!statements) {
         console.log("No statements found.");
         return;
     }
+    const p = new Table({ columns: [
+            { name: 'scope', alignment: 'left', maxLen: 10, minLen: 1 },
+            { name: 'statement', alignment: 'left', minLen: 40, maxLen: 40}
+            // { name: 'labels', alignment: 'left' }
+        ], rowSeparator: true });
     for (const stmt of statements) {
-        console.log(
-            stmt.id + ', ' +
-            stmt.scope + ', ' +
-            stmt.statement + ', ' +
-            stmt.labels);
+        p.addRow({
+            scope: stmt.scope,
+            statement: stmt.statement,
+            // labels: stmt.labels
+        });
     }
+    p.printTable();
 }
 
 const contextList = async (params: CmdParams) => {

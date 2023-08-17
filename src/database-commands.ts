@@ -1,17 +1,17 @@
 import WAII from 'waii-sdk-js'
-import { DBConnection } from "waii-sdk-js/dist/clients/database/src/Database";
-import { CmdParams } from './cmd-line-parser';
+import {DBConnection} from "waii-sdk-js/dist/clients/database/src/Database";
+import {CmdParams} from './cmd-line-parser';
 
-import { Table } from 'console-table-printer';
+import {Table} from 'console-table-printer';
 
 const printConnectors = (connectors?: DBConnection[]) => {
     // Define the columns for the table, excluding the 'key' column
     const columns = [
-        { name: 'account', title: 'account_name', alignment: 'left' },
-        { name: 'database', title: 'database', alignment: 'left' },
-        { name: 'warehouse', title: 'warehouse', alignment: 'left' },
-        { name: 'role', title: 'role', alignment: 'left' },
-        { name: 'user', title: 'username', alignment: 'left' }
+        {name: 'account', title: 'account_name', alignment: 'left'},
+        {name: 'database', title: 'database', alignment: 'left'},
+        {name: 'warehouse', title: 'warehouse', alignment: 'left'},
+        {name: 'role', title: 'role', alignment: 'left'},
+        {name: 'user', title: 'username', alignment: 'left'}
     ];
 
     let default_scope = WAII.Database.getDefaultConnection()
@@ -22,10 +22,10 @@ const printConnectors = (connectors?: DBConnection[]) => {
             // Create a new Table with the defined columns and the connection.key as the title
             let config = {}
             if (connection.key == default_scope) {
-                config = { color: 'green' }
+                config = {color: 'green'}
             }
 
-            const p = new Table({ columns, title: connection.key });
+            const p = new Table({columns, title: connection.key});
 
             // Add the current connection to the table
             p.addRow({
@@ -59,7 +59,7 @@ const databaseList = async (params: CmdParams) => {
 }
 
 const databaseDelete = async (params: CmdParams) => {
-    let result = await WAII.Database.modifyConnections({ removed: [params.vals[0]] });
+    let result = await WAII.Database.modifyConnections({removed: [params.vals[0]]});
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -113,13 +113,68 @@ const databaseDescribe = async (params: CmdParams) => {
                 console.log("Database is empty.");
                 return;
             }
-            console.log("Database:\n---------");
-            console.log(result.catalogs[0].schemas[0].name.database_name);
-            console.log("\nSchemas:\n--------")
+
+            // print table of database
+            const p_table = new Table({
+                columns: [
+                    {name: 'database', title: 'database', alignment: 'left'},
+                ]
+            });
+            p_table.addRow({
+                    database: result.catalogs[0].schemas[0].name.database_name,
+                }
+            );
+            p_table.printTable();
+
+            // print table of schemas
+
+            const p = new Table({
+                columns: [
+                    {name: 'schema', title: 'schema', alignment: 'left'},
+                    {name: 'tables', title: 'tables', alignment: 'left'},
+                ]
+            });
             for (const schema of result.catalogs[0].schemas) {
                 if (!schema.tables) schema.tables = [];
-                console.log(schema.name.database_name + '.' + schema.name.schema_name + " (" + schema.tables.length + " tables)");
+                p.addRow({
+                    schema: schema.name.database_name + '.' + schema.name.schema_name,
+                    tables: schema.tables.length,
+                });
             }
+            p.printTable();
+        }
+    }
+}
+
+const schemaList = async (params: CmdParams) => {
+    let result = await WAII.Database.getCatalogs();
+    if (!result.catalogs || result.catalogs.length === 0) {
+        console.log("No databases configured.");
+        return;
+    }
+    if (!result.catalogs[0].schemas) {
+        console.log("No schemas found");
+        return;
+    }
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log("JSON format not yet implemented.");
+        }
+        default: {
+            const p = new Table({
+                columns: [
+                    {name: 'schema', title: 'schema', alignment: 'left'},
+                    {name: 'tables', title: 'tables', alignment: 'left'},
+                ]
+            });
+            for (const schema of result.catalogs[0].schemas) {
+                if (!schema.tables) schema.tables = [];
+                p.addRow({
+                    schema: schema.name.database_name + '.' + schema.name.schema_name,
+                    tables: schema.tables.length,
+                });
+            }
+            p.printTable();
         }
     }
 }
@@ -135,13 +190,22 @@ const schemaDescribe = async (params: CmdParams) => {
         console.log("No schemas found");
         return;
     }
+
+    // schema name to describe
+    let target_schema_name = params.vals[0]
+    // if target schema name includes ".", get schema name from it (last element)
+    if (target_schema_name.includes(".")) {
+        let arr = target_schema_name.split(".")
+        target_schema_name = arr[arr.length - 1]
+    }
+
     for (const s of result.catalogs[0].schemas) {
-        if (s.name.schema_name == params.vals[0]) {
+        if (s.name.schema_name.toLowerCase() == target_schema_name.toLowerCase()) {
             schema = s;
         }
     }
     if (!schema) {
-        console.error("Can't find schema: " + params.vals[0]);
+        console.error("Can't find schema: " + target_schema_name);
         return;
     }
     switch (params.opts['format']) {
@@ -158,9 +222,17 @@ const schemaDescribe = async (params: CmdParams) => {
                 console.log("\nTables:\n-------")
             }
             if (schema.tables) {
+                const p = new Table({
+                    columns: [
+                        {name: 'table', title: 'table', alignment: 'left'},
+                    ]
+                });
                 for (const table of schema.tables) {
-                    console.log(table.name.database_name + '.' + table.name.schema_name + '.' + table.name.table_name);
+                    p.addRow({
+                        table: table.name.table_name,
+                    });
                 }
+                p.printTable();
             }
             if (schema.description && schema.description.common_questions) {
                 console.log("\nCommon Questions:\n-----------------");
@@ -172,7 +244,92 @@ const schemaDescribe = async (params: CmdParams) => {
     }
 }
 
+function getTerminalWidth(): number {
+    return process.stdout.columns || 80; // Fallback to 80 if undefined
+}
+
+function formatStrings(list: string[]): string {
+    const terminalWidth = getTerminalWidth(); // Fallback to 80 if undefined
+    const maxLength = Math.max(...list.map(item => item.length)) + 2; // 2 spaces between columns
+    const columns = Math.floor(terminalWidth / maxLength);
+    const rows = Math.ceil(list.length / columns);
+
+    let output = '';
+    for (let row = 0; row < rows; row++) {
+        for (let column = 0; column < columns; column++) {
+            const index = column + row * columns;
+            if (index < list.length) {
+                const item = list[index];
+                output += item.padEnd(maxLength);
+            }
+        }
+        output += '\n';
+    }
+
+    return output;
+}
+
+
+const tableList = async (params: CmdParams) => {
+    let result = await WAII.Database.getCatalogs();
+    if (!result.catalogs || result.catalogs.length === 0) {
+        console.log("No databases configured.");
+        return;
+    }
+
+    if (!result.catalogs[0].schemas) {
+        console.log("No tables found.");
+        return;
+    }
+
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log("JSON format not yet implemented.");
+        }
+        default: {
+            for (const schema of result.catalogs[0].schemas) {
+                let tables = []
+                for (const table of (schema.tables ? schema.tables : [])) {
+                    tables.push(table.name.table_name)
+                }
+                let t_s = formatStrings(tables)
+                const p_s = new Table({
+                    columns: [
+                        {name: 'table', title: schema.name.schema_name, alignment: 'left'},
+                    ],
+                })
+                // split t_s by '\n', and add row
+                for (const t of t_s.split('\n')) {
+                    p_s.addRow({
+                        table: t,
+                    })
+                }
+                p_s.printTable()
+            }
+        }
+    }
+}
+
 const tableDescribe = async (params: CmdParams) => {
+    // params.vals[0] is table name, which can be <db_name>.<schema_name>.<table_name>, or <schema_name>.<table_name> or <table_name>
+    // if any of db_name or schema_name is not provided, use default db_name and schema_name (*)
+    let db_name = '*'
+    let schema_name = '*'
+    let table_name = params.vals[0]
+    if (table_name.includes(".")) {
+        let arr = table_name.split(".")
+        if (arr.length == 3) {
+            db_name = arr[0]
+            schema_name = arr[1]
+            table_name = arr[2]
+        } else if (arr.length == 2) {
+            schema_name = arr[0]
+            table_name = arr[1]
+        } else {
+            table_name = arr[0]
+        }
+    }
+
     let result = await WAII.Database.getCatalogs();
     if (!result.catalogs || result.catalogs.length === 0) {
         console.log("No databases configured.");
@@ -183,45 +340,52 @@ const tableDescribe = async (params: CmdParams) => {
         console.log("No schemas found.");
         return;
     }
-
-    let schema = null;
-    for (const s of result.catalogs[0].schemas) {
-        if (params.vals[0].toLowerCase().startsWith(s.name.schema_name.toLowerCase())) {
-            schema = s;
+    let tables = []
+    for (const schema of result.catalogs[0].schemas) {
+        for (const table of (schema.tables ? schema.tables : [])) {
+            // try to match table, db and schema name
+            if (table.name.table_name.toLowerCase() == table_name.toLowerCase() &&
+                (db_name == '*' || (table.name.database_name && table.name.database_name.toLowerCase() == db_name.toLowerCase())) &&
+                (schema_name == '*' || (table.name.schema_name && table.name.schema_name.toLowerCase() == schema_name.toLowerCase()))) {
+                tables.push(table)
+            }
         }
     }
 
-    if (!schema) {
-        console.log("No matching schema found.");
-        return;
+    if (tables.length > 1) {
+        console.error("Too many tables found. Please specify the schema_name too. Tables=[" + tables.map((t) => t.name.schema_name + "." + t.name.table_name).join(", ") + "]")
+        process.exit(-1)
     }
 
-    let table = null;
-    for (const t of (schema.tables ? schema.tables : [])) {
-        if (!t.name.schema_name) t.name.schema_name = '';
-        if (params.vals[0].toLocaleLowerCase() ===
-            (t.name.schema_name.toLowerCase() + '.' + t.name.table_name.toLowerCase())) {
-            table = t;
-        }
-    }
-
-    if (!schema || !table) {
+    if (tables.length == 0) {
         console.error("Can't find table: " + params.vals[0]);
         process.exit(-1);
     }
-    switch (params.opts['format']) {
-        case 'json': {
-            console.log(JSON.stringify(table, null, 2));
-            break;
-        }
-        default: {
-            console.log("Table:\n------");
-            console.log(table.name.schema_name + "." + table.name.table_name);
-            console.log("\nDescription:\n------------");
-            console.log(table.description);
-            console.log("\nColumns:\n--------")
-            for (const column of (table.columns ? table.columns : [])) {
-                console.log(column.name + ': ' + column.type);
+    for (const table of tables) {
+        switch (params.opts['format']) {
+            case 'json': {
+                console.log(JSON.stringify(table, null, 2));
+                break;
+            }
+            default: {
+                console.log("Table:\n------");
+                console.log(table.name.schema_name + "." + table.name.table_name);
+                console.log("\nDescription:\n------------");
+                console.log(table.description);
+                console.log("\nColumns:\n--------")
+                const p = new Table({
+                    columns: [
+                        {name: 'column', title: 'column', alignment: 'left'},
+                        {name: 'type', title: 'type', alignment: 'left'},
+                    ]
+                });
+                for (const column of (table.columns ? table.columns : [])) {
+                    p.addRow({
+                        column: column.name,
+                        type: column.type,
+                    });
+                }
+                p.printTable();
             }
         }
     }
@@ -236,11 +400,13 @@ const databaseCommands = {
 };
 
 const schemaCommands = {
-    describe: schemaDescribe
+    describe: schemaDescribe,
+    list: schemaList,
 };
 
 const tableCommands = {
-    describe: tableDescribe
+    describe: tableDescribe,
+    list: tableList,
 }
 
-export { databaseCommands, schemaCommands, tableCommands };
+export {databaseCommands, schemaCommands, tableCommands};

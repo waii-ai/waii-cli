@@ -1,5 +1,5 @@
 import WAII from 'waii-sdk-js'
-import { CmdParams } from './cmd-line-parser';
+import {CmdParams} from './cmd-line-parser';
 
 export interface IIndexable {
     [key: string]: any;
@@ -12,9 +12,9 @@ const printQuery = (query: string | undefined) => {
     const highlight = require('cli-highlight').highlight
     console.log(highlight(query, {language: 'sql', ignoreIllegals: true}))
 }
-  
+
 const queryCreate = async (params: CmdParams) => {
-    let result = await WAII.Query.generate({ ask: params.vals[0] });
+    let result = await WAII.Query.generate({ask: params.vals[0]});
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -28,10 +28,10 @@ const queryCreate = async (params: CmdParams) => {
 
 const queryUpdate = async (params: CmdParams) => {
     let query = params.input;
-    let descResult = await WAII.Query.describe({ query: query });
+    let descResult = await WAII.Query.describe({query: query});
     let genResult = await WAII.Query.generate({
         ask: params.vals[0],
-        tweak_history: [{ ask: descResult.summary, sql: query }]
+        tweak_history: [{ask: descResult.summary, sql: query}]
     });
     switch (params.opts['format']) {
         case 'json': {
@@ -39,14 +39,14 @@ const queryUpdate = async (params: CmdParams) => {
             break;
         }
         default: {
-            console.log(genResult.query);
+            printQuery(genResult.query);
         }
     }
 }
 
 const queryExplain = async (params: CmdParams) => {
     let query = params.input;
-    let result = await WAII.Query.describe({ query: query });
+    let result = await WAII.Query.describe({query: query});
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -56,9 +56,11 @@ const queryExplain = async (params: CmdParams) => {
             console.log("Summary: \n--------");
             console.log(result.summary);
             console.log("\nTables: \n-------");
-            console.log((result.tables?result.tables:[]).map((tname) => { return tname.schema_name + tname.table_name; }).join('\n'));
+            console.log((result.tables ? result.tables : []).map((tname) => {
+                return tname.schema_name + "." + tname.table_name;
+            }).join('\n'));
             console.log("\nSteps: \n------");
-            console.log((result.detailed_steps?result.detailed_steps:[]).join('\n\n'));
+            console.log((result.detailed_steps ? result.detailed_steps : []).join('\n\n'));
         }
     }
 }
@@ -69,7 +71,14 @@ const queryRewrite = async (params: CmdParams) => {
 }
 
 const queryTranscode = async (params: CmdParams) => {
-    params.vals[0] = "Rewrite the query to produce the same output but use " + params.vals[0] + " instead of snowflake.";
+    let from_dialect = params.opts['from']
+    let to_dialect = params.opts['to'] ? params.opts['to'] : 'Snowflake';
+    let msg = "Rewrite the query to produce the same output in " + to_dialect + ", keep the logic as close as possible"
+    if (from_dialect) {
+        msg += " to " + from_dialect;
+    }
+
+    params.vals[0] = msg
     await queryUpdate(params);
 }
 
@@ -78,11 +87,11 @@ const queryDiff = async (params: CmdParams) => {
     process.exit(-1);
 }
 
-import { Table } from 'console-table-printer';
+import {Table} from 'console-table-printer';
 
 const queryRun = async (params: CmdParams) => {
     let query = params.input;
-    let result = await WAII.Query.run({ query: query });
+    let result = await WAII.Query.run({query: query});
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -92,11 +101,11 @@ const queryRun = async (params: CmdParams) => {
             if (result.column_definitions && result.rows) {
                 // Define the columns based on the result's column definitions
                 const columns = result.column_definitions.map((c) => {
-                    return { name: c.name, alignment: 'left' }; // you can customize alignment here
+                    return {name: c.name, alignment: 'left'}; // you can customize alignment here
                 });
 
                 // Create a new Table with the columns
-                const p = new Table({ columns });
+                const p = new Table({columns});
 
                 // Iterate through the rows and add them to the table
                 for (const row of result.rows) {
@@ -115,7 +124,6 @@ const queryRun = async (params: CmdParams) => {
 }
 
 
-
 const queryCommands = {
     create: queryCreate,
     update: queryUpdate,
@@ -127,4 +135,4 @@ const queryCommands = {
     run: queryRun,
 };
 
-export { queryCommands }
+export {queryCommands, printQuery}

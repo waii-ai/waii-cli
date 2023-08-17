@@ -1,6 +1,8 @@
 import WAII from 'waii-sdk-js'
-import { GeneratedQueryHistoryEntry } from 'waii-sdk-js/dist/clients/history/src/History';
-import { CmdParams } from './cmd-line-parser';
+import {GeneratedQueryHistoryEntry} from 'waii-sdk-js/dist/clients/history/src/History';
+import {CmdParams} from './cmd-line-parser';
+import {Table} from "console-table-printer";
+import {printQuery} from "./query-commands";
 
 /**
  * "," is commonly presently in SQL & cause difficulty in parsing.
@@ -8,8 +10,20 @@ import { CmdParams } from './cmd-line-parser';
  *
  * @param history
  */
-const printHistory = (history: GeneratedQueryHistoryEntry[]) => {
-    console.log("uuid|favorite|question|query|tables|timestamp");
+const printHistory = (history: GeneratedQueryHistoryEntry[], limit: number) => {
+    // filter out entries with empty query
+    history = history.filter((entry) => {
+        return entry.query
+    })
+
+    history.sort((a, b) => {
+        // @ts-ignore
+        return b.query.timestamp_ms - a.query.timestamp_ms;
+    })
+
+    // pick top 10 entries
+    history = history.slice(0, limit);
+
     for (const entry of history) {
         if (!entry.query || !entry.request) {
             continue;
@@ -23,18 +37,46 @@ const printHistory = (history: GeneratedQueryHistoryEntry[]) => {
         if (!entry.query.query) {
             entry.query.query = '';
         }
-        console.log("" +
-            entry.query.uuid + "| " +
-            entry.query.liked + "| " +
-            entry.request.ask.replace(/\n/g, '\\n') + "| \"" +
-            entry.query.query.replace(/\n/g, '\\n') + "\"| " +
-            entry.query.tables?.map((t) => t.schema_name + '.' + t.table_name).join(" ") + "| " +
-            entry.query.timestamp_ms
+
+        const p = new Table({columns: [
+                {name: 'property', alignment: 'left'},
+                {name: 'value', alignment: 'left', maxLen: 60, minLen: 40},
+            ], rowSeparator: true});
+
+        p.addRow({
+            property: 'uuid',
+            value: entry.query.uuid
+        }
         );
+        p.addRow({
+            property: 'favorite',
+            value: entry.query.liked ? 'true' : 'false'
+        })
+        p.addRow({
+            property: 'question',
+            value: entry.request.ask.replace(/\n/g, '\\n')
+        })
+        p.addRow({
+            property: 'tables',
+            value: entry.query.tables?.map((t) => t.schema_name + '.' + t.table_name).join(" ")
+        })
+        p.printTable();
+        console.log("Query: ")
+        console.log("```")
+        printQuery(entry.query.query);
+        console.log("```")
+
+        // print separator
+        console.log("------------------------------------------------------------");
     }
 }
 
 const historyList = async (params: CmdParams) => {
+    let limit = 10
+    if (params.opts['limit']) {
+        limit = parseInt(params.opts['limit'])
+    }
+
     let result = await WAII.History.list();
     switch (params.opts['format']) {
         case 'json': {
@@ -46,7 +88,7 @@ const historyList = async (params: CmdParams) => {
                 console.log("No history found.");
                 return;
             }
-            printHistory(result.history);
+            printHistory(result.history, limit);
         }
     }
 }

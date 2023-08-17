@@ -11,8 +11,7 @@ type CmdParams = {
 
 async function readStdin() {
     const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
+        input: process.stdin
     });
 
     let content = '';
