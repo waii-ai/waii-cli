@@ -90,8 +90,23 @@ const queryDiff = async (params: CmdParams) => {
 import {Table} from 'console-table-printer';
 
 const queryRun = async (params: CmdParams) => {
+    let example_command_str = "`cat query.sql | waii query run` or `echo 'select 1' | waii query run`"
+
+    if (params.vals.length > 0) {
+        console.error("You cannot specify a SQL query as a parameter to run when using the `waii query run` command. " +
+            "You should send the query in as input of the command. e.g. " + example_command_str);
+        process.exit(-1);
+    }
+
     let query = params.input;
+
+    if (!query) {
+        console.error("No query specified. You should specify query via input: e.g. " + example_command_str);
+        process.exit(-1);
+    }
+
     let result = await WAII.Query.run({query: query});
+
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
