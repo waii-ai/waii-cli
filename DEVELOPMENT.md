@@ -45,4 +45,4 @@ However, be careful that such commands may change package.json package.lock.json
 ## Publish to NPM
 First, you need to login to NPM by running `npm login`. if you don't have an account, or your account doesn't have the permission to publish the package, please contact the Waii team.
 Then, you need to bump up the version number in `package.json`
-Run npm pack && npm publish to publish the package to NPM.
+Run `npm pack && npm publish` to publish the package to NPM.
