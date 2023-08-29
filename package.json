@@ -1,6 +1,6 @@
 {
   "name": "waii-cli",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "bin": {
     "waii": "dist/waii-cli.js"
   },
@@ -23,7 +23,7 @@
     "fs": "^0.0.1-security",
     "ts-node": "^10.9.1",
     "uuid": "^9.0.0",
-    "waii-sdk-js": "^1.0.3",
+    "waii-sdk-js": "^1.0.5",
     "yaml": "^2.3.1",
     "console-table-printer": "2.11.2",
     "cli-highlight": "2.1.11"
