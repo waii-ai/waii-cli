@@ -88,7 +88,14 @@ const initialize = async () => {
         throw Error("Please provide your Waii API key in the config file: " + configPath)
     }
 
-    await WAII.initialize(config.url, config.apiKey);
+    WAII.initialize(config.url, config.apiKey);
+    let result = await WAII.Database.getConnections({});
+
+    if (result.default_db_connection_key) {
+        await WAII.Database.activateConnection(result.default_db_connection_key);
+    } else if (result.connectors && result.connectors.length > 0) {
+        await WAII.Database.activateConnection(result.connectors[0].key);
+    }
 }
 
 const main = async () => {
