@@ -14,7 +14,9 @@ const printQuery = (query: string | undefined) => {
 }
 
 const queryCreate = async (params: CmdParams) => {
-    let result = await WAII.Query.generate({ask: params.vals[0]});
+    let dialect = params.opts['dialect']
+
+    let result = await WAII.Query.generate({ask: params.vals[0], dialect: dialect});
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -28,9 +30,11 @@ const queryCreate = async (params: CmdParams) => {
 
 const queryUpdate = async (params: CmdParams) => {
     let query = params.input;
+    let dialect = params.opts['dialect']
     let descResult = await WAII.Query.describe({query: query});
     let genResult = await WAII.Query.generate({
         ask: params.vals[0],
+        dialect: dialect,
         tweak_history: [{ask: descResult.summary, sql: query}]
     });
     switch (params.opts['format']) {
@@ -73,6 +77,7 @@ const queryRewrite = async (params: CmdParams) => {
 const queryTranscode = async (params: CmdParams) => {
     let from_dialect = params.opts['from']
     let to_dialect = params.opts['to'] ? params.opts['to'] : 'Snowflake';
+    params.opts['dialect'] = to_dialect;
     let msg = "Rewrite the query to produce the same output in " + to_dialect + ", keep the logic as close as possible"
     if (from_dialect) {
         msg += " to " + from_dialect;
