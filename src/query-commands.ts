@@ -31,11 +31,14 @@ const queryCreate = async (params: CmdParams) => {
 const queryUpdate = async (params: CmdParams) => {
     let query = params.input;
     let dialect = params.opts['dialect']
+    let schema = params.opts['schema']
+
     let descResult = await WAII.Query.describe({query: query});
     let genResult = await WAII.Query.generate({
         ask: params.vals[0],
         dialect: dialect,
-        tweak_history: [{ask: descResult.summary, sql: query}]
+        tweak_history: [{ask: descResult.summary, sql: query}],
+        search_context: [{schema_name: schema}]
     });
     switch (params.opts['format']) {
         case 'json': {
@@ -78,7 +81,7 @@ const queryTranscode = async (params: CmdParams) => {
     let from_dialect = params.opts['from']
     let to_dialect = params.opts['to'] ? params.opts['to'] : 'Snowflake';
     params.opts['dialect'] = to_dialect;
-    let msg = "Rewrite the query to produce the same output in " + to_dialect + ", keep the logic as close as possible"
+    let msg = "Rewrite the query to produce the same output in " + to_dialect
     if (from_dialect) {
         msg += " to " + from_dialect;
     }
@@ -131,7 +134,7 @@ const queryRun = async (params: CmdParams) => {
                 for (const row of result.rows) {
                     const rowObj: { [key: string]: any } = {};
                     for (const column of result.column_definitions) {
-                        rowObj[column.name] = (row as IIndexable)[column.name.toLocaleLowerCase()];
+                        rowObj[column.name] = (row as IIndexable)[column.name];
                     }
                     p.addRow(rowObj);
                 }

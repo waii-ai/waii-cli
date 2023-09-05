@@ -391,6 +391,55 @@ const tableDescribe = async (params: CmdParams) => {
     }
 }
 
+const updateTableDescription = async (params: CmdParams) => {
+    let table_name = params.vals[0]
+    let description = params.vals[1]
+    if (!table_name || !description) {
+        console.error("table_name and description are required")
+        process.exit(-1)
+    }
+
+    // use "." to split table_name into db_name, schema_name and table_name
+    let arr = table_name.split(".")
+    if (arr.length != 3) {
+        console.error("table_name should be <db_name>.<schema_name>.<table_name>")
+        process.exit(-1)
+    }
+
+    await WAII.Database.updateTableDescription({
+        description: description,
+        table_name: {
+            table_name: arr[2],
+            schema_name: arr[1],
+            database_name: arr[0]
+        }
+    })
+}
+
+const schemaUpdateDescription = async (params: CmdParams) => {
+    let schema_name = params.vals[0]
+    let description = params.vals[1]
+    if (!schema_name || !description) {
+        console.error("schema_name and description are required")
+        process.exit(-1)
+    }
+
+    // use "." to split schema_name into db_name and schema_name
+    let arr = schema_name.split(".")
+    if (arr.length != 2) {
+        console.error("schema_name should be <db_name>.<schema_name>")
+        process.exit(-1)
+    }
+
+    await WAII.Database.updateSchemaDescription({
+        description: JSON.parse(description),
+        schema_name: {
+            schema_name: arr[1],
+            database_name: arr[0]
+        }
+    })
+}
+
 const databaseCommands = {
     list: databaseList,
     add: databaseAdd,
@@ -402,11 +451,13 @@ const databaseCommands = {
 const schemaCommands = {
     describe: schemaDescribe,
     list: schemaList,
+    update_description: schemaUpdateDescription
 };
 
 const tableCommands = {
     describe: tableDescribe,
     list: tableList,
+    update_description: updateTableDescription
 }
 
 export {databaseCommands, schemaCommands, tableCommands};
