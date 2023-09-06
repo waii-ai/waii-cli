@@ -51,6 +51,28 @@ const queryUpdate = async (params: CmdParams) => {
     }
 }
 
+const log_query_explain_result = (result: any) => {
+    if (result.what_changed) {
+        console.log("What Changed: \n--------------");
+        console.log(result.what_changed);
+        console.log("\n")
+    }
+
+    console.log("Summary: \n--------");
+    console.log(result.summary);
+
+    let tables = (result.tables ? result.tables : []).map((tname : TableName) => {
+        return tname.schema_name + "." + tname.table_name;
+    }).join('\n');
+    if (tables) {
+        console.log("\nTables: \n-------");
+        console.log(tables);
+    }
+
+    console.log("\nSteps: \n------");
+    console.log((result.detailed_steps ? result.detailed_steps : []).join('\n\n'));
+}
+
 const queryExplain = async (params: CmdParams) => {
     let query = params.input;
     let result = await WAII.Query.describe({query: query});
@@ -60,14 +82,31 @@ const queryExplain = async (params: CmdParams) => {
             break;
         }
         default: {
-            console.log("Summary: \n--------");
-            console.log(result.summary);
-            console.log("\nTables: \n-------");
-            console.log((result.tables ? result.tables : []).map((tname) => {
-                return tname.schema_name + "." + tname.table_name;
-            }).join('\n'));
-            console.log("\nSteps: \n------");
-            console.log((result.detailed_steps ? result.detailed_steps : []).join('\n\n'));
+            log_query_explain_result(result);
+        }
+    }
+}
+
+const queryDiff = async (params: CmdParams) => {
+    let query = params.input;
+    // load it from file
+    let old_query_file = params.opts['previous_query_file'];
+    let prev_query = ""
+    if (old_query_file) {
+        let fs = require('fs');
+        prev_query = fs.readFileSync(old_query_file, 'utf8');
+    } else {
+        console.error("You must specify a previous query file to diff against by using -previous_query_file.");
+        process.exit(-1);
+    }
+    let result = await WAII.Query.diff({query: query, previous_query: prev_query});
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log(JSON.stringify(result, null, 2));
+            break;
+        }
+        default: {
+            log_query_explain_result(result);
         }
     }
 }
@@ -90,12 +129,8 @@ const queryTranscode = async (params: CmdParams) => {
     await queryUpdate(params);
 }
 
-const queryDiff = async (params: CmdParams) => {
-    console.error("Query diff not yet implemented.");
-    process.exit(-1);
-}
-
 import {Table} from 'console-table-printer';
+import {TableName} from "waii-sdk-js/dist/clients/database/src/Database";
 
 const queryRun = async (params: CmdParams) => {
     let example_command_str = "`cat query.sql | waii query run` or `echo 'select 1' | waii query run`"
