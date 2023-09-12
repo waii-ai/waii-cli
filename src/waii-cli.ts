@@ -24,13 +24,13 @@ const help = () => {
     console.log('Examples')
     console.log('========')
     console.log('   waii database list')
-    console.log('   waii database list -format=json')
+    console.log('   waii database list --format json')
     console.log('   waii context list')
-    console.log('   waii context list -format=json')
+    console.log('   waii context list --format json')
     console.log('   waii schema describe schema_name')
     console.log('   waii table describe schema_name.table_name')
     console.log('   waii history')
-    console.log('   waii history list -format=json')
+    console.log('   waii history list --format json')
     process.exit(-1);
 }
 

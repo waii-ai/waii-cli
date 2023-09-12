@@ -451,13 +451,13 @@ const databaseCommands = {
 const schemaCommands = {
     describe: schemaDescribe,
     list: schemaList,
-    update_description: schemaUpdateDescription
+    update: schemaUpdateDescription
 };
 
 const tableCommands = {
     describe: tableDescribe,
     list: tableList,
-    update_description: updateTableDescription
+    update: updateTableDescription
 }
 
 export {databaseCommands, schemaCommands, tableCommands};
