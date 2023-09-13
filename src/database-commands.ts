@@ -504,15 +504,14 @@ const schemaUpdateQuestions = async (params: CmdParams) => {
 
     let questions = params.vals.slice(1);
 
-    if (questions.length !== 3) {
-        if (questions.length === 0) {
-            questions = params.input.split("\n");
-        }
-        if (questions.length !== 3) {
-            console.error("Need exactly 3 questions.");            
+    if (questions.length < 3) {
+        questions = params.input.split("\n");
+        if (questions.length < 3) {
+            console.error("Need 3 questions.");            
             process.exit(-1);
         }
     }
+    questions = questions.slice(0,3);
 
     let schema : Schema = await findSchema(schema_name);
     
