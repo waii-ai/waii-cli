@@ -505,8 +505,13 @@ const schemaUpdateQuestions = async (params: CmdParams) => {
     let questions = params.vals.slice(1);
 
     if (questions.length !== 3) {
-        console.error("Need exactly 3 questions.");
-        process.exit(-1);
+        if (questions.length === 0) {
+            questions = params.input.split("\n");
+        }
+        if (questions.length !== 3) {
+            console.error("Need exactly 3 questions.");            
+            process.exit(-1);
+        }
     }
 
     let schema : Schema = await findSchema(schema_name);
@@ -535,8 +540,11 @@ const schemaUpdateSummary = async (params: CmdParams) => {
     let summary = params.vals[1];
 
     if (!summary) {
-        console.error("Need valid summary.");
-        process.exit(-1);
+        summary = params.input;
+        if (!summary) {
+            console.error("Need valid summary.");
+            process.exit(-1);
+        }
     }
 
     let schema : Schema = await findSchema(schema_name);
