@@ -1,7 +1,7 @@
 import WAII from 'waii-sdk-js'
+import {Schema, SchemaDescription} from 'waii-sdk-js/dist/clients/database/src/Database';
 import {DBConnection} from "waii-sdk-js/dist/clients/database/src/Database";
 import {CmdParams} from './cmd-line-parser';
-
 import {Table} from 'console-table-printer';
 
 const printConnectors = (connectors?: DBConnection[]) => {
@@ -417,27 +417,144 @@ const updateTableDescription = async (params: CmdParams) => {
 }
 
 const schemaUpdateDescription = async (params: CmdParams) => {
-    let schema_name = params.vals[0]
-    let description = params.vals[1]
+    let name = params.vals[0];
+    let description = params.vals[1];
+    let schema_name = null;
+    let database_name = null;
+
     if (!schema_name || !description) {
-        console.error("schema_name and description are required")
-        process.exit(-1)
+        console.error("database name, schema_name and description are required");
+        process.exit(-1);
     }
 
-    // use "." to split schema_name into db_name and schema_name
-    let arr = schema_name.split(".")
-    if (arr.length != 2) {
-        console.error("schema_name should be <db_name>.<schema_name>")
-        process.exit(-1)
+    // if target schema name includes ".", get schema name from it (last element)
+    if (name.includes(".")) {
+        let arr = name.split(".");
+        if (arr.length != 2) {
+            console.error("name given is not of the form <db name>.<schema name>");
+            process.exit(-1);
+        }
+        schema_name = arr[1];
+        database_name = arr[0];
+    }
+
+    if (!database_name || !schema_name) {
+        console.error("Incorrect name, need <db name>.<schema name>");
+        process.exit(-1);
     }
 
     await WAII.Database.updateSchemaDescription({
         description: JSON.parse(description),
         schema_name: {
-            schema_name: arr[1],
-            database_name: arr[0]
+            schema_name: schema_name,
+            database_name: database_name
         }
-    })
+    });
+}
+
+const getDBName = (name: string): string => {
+    if (!name) {
+        console.error("Invalid name: ", name);
+        process.exit(-1);
+    }
+    return name.split('.')[0];
+}
+
+const getSchemaName = (name: string): string => {
+    if (!name) {
+        console.error("Invalid name: ", name);
+        process.exit(-1);
+    }
+
+    if (name.split('.').length < 2) {
+        console.error("Invalid name: ", name);
+    }
+    return name.split('.')[1];
+}
+
+const findSchema = async (name: string):Promise<Schema> => {
+
+    let result = await WAII.Database.getCatalogs();
+    if (!result.catalogs || result.catalogs.length === 0) {
+        console.log("No databases configured.");
+        process.exit(-1);
+    }
+    if (!result.catalogs[0].schemas) {
+        console.log("No schemas found");
+        process.exit(-1);
+    }
+
+    let schema = null;
+    for (const s of result.catalogs[0].schemas) {
+        if (s.name.schema_name.toLowerCase() == name.toLowerCase()) {
+            schema = s;
+        }
+    }
+    if (!schema) {
+        console.error("Can't find schema: " + name);
+        process.exit(-1);
+    }
+    return schema;
+}
+
+const schemaUpdateQuestions = async (params: CmdParams) => {
+    let name = params.vals[0];
+    let database_name = getDBName(name);
+    let schema_name = getSchemaName(name);
+
+    let questions = params.vals.slice(1);
+
+    if (questions.length !== 3) {
+        console.error("Need exactly 3 questions.");
+        process.exit(-1);
+    }
+
+    let schema : Schema = await findSchema(schema_name);
+    
+    let description = schema.description;
+    if (!description) {
+        description = {};
+    }
+
+    description.common_questions = questions;
+
+    await WAII.Database.updateSchemaDescription({
+        description: description,
+        schema_name: {
+            schema_name: schema_name,
+            database_name: database_name
+        }
+    });
+}
+
+const schemaUpdateSummary = async (params: CmdParams) => {
+    let name = params.vals[0];
+    let database_name = getDBName(name);
+    let schema_name = getSchemaName(name);
+    
+    let summary = params.vals[1];
+
+    if (!summary) {
+        console.error("Need valid summary.");
+        process.exit(-1);
+    }
+
+    let schema : Schema = await findSchema(schema_name);
+    
+    let description = schema.description;
+    if (!description) {
+        description = {};
+    }
+
+    description.summary = summary;
+
+    await WAII.Database.updateSchemaDescription({
+        description: description,
+        schema_name: {
+            schema_name: schema_name,
+            database_name: database_name
+        }
+    });
 }
 
 const databaseCommands = {
@@ -451,7 +568,9 @@ const databaseCommands = {
 const schemaCommands = {
     describe: schemaDescribe,
     list: schemaList,
-    update: schemaUpdateDescription
+    update: schemaUpdateDescription,
+    update_questions: schemaUpdateQuestions,
+    update_summary: schemaUpdateSummary
 };
 
 const tableCommands = {

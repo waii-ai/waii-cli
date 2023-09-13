@@ -313,10 +313,23 @@ v8-compile-cache-lib@^3.0.1:
   resolved "https://registry.npmjs.org/v8-compile-cache-lib/-/v8-compile-cache-lib-3.0.1.tgz"
   integrity sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==
 
-waii-sdk-js@^1.0.10:
-  version "1.0.10"
-  resolved "https://registry.npmjs.org/waii-sdk-js/-/waii-sdk-js-1.0.10.tgz"
-  integrity sha512-LiICJ3J2Cigyr7Th+NhfmFqFZDbd1xoS+/deGVMq1Rn6Ri863JoWHK1smW6NYkdLYunYrJdf9pjdsUn+MksmnA==
+"waii-cli@file:waii-cli-1.0.13.tgz":
+  version "1.0.13"
+  resolved "file:waii-cli-1.0.13.tgz"
+  integrity sha512-yLo+Cob8rOXjdt624GPq4CuYJja6W7GtTUXo7JdpDkS1mx2TpIUyMV9aZf6ZWm00jRtUjlXz3FzZ9Jol9m7sCg==
+  dependencies:
+    cli-highlight "2.1.11"
+    console-table-printer "2.11.2"
+    fs "^0.0.1-security"
+    ts-node "^10.9.1"
+    uuid "^9.0.0"
+    waii-sdk-js "^1.0.10"
+    yaml "^2.3.1"
+
+waii-sdk-js@^1.0.10, waii-sdk-js@^1.0.14:
+  version "1.0.14"
+  resolved "https://registry.npmjs.org/waii-sdk-js/-/waii-sdk-js-1.0.14.tgz"
+  integrity sha512-aSPJdMiew/mQXCcGTwM4w87otMKxYS7fUsJogRTLXGLq1FCcKiAL4YR+Brsn8A0dgvZMKqPHmtCxi8YW/Ker/A==
   dependencies:
     js-yaml "^4.1.0"
     uuid "^9.0.0"
