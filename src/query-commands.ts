@@ -87,7 +87,7 @@ const queryExplain = async (params: CmdParams) => {
     }
 }
 
-/*const queryDiff = async (params: CmdParams) => {
+const queryDiff = async (params: CmdParams) => {
     let query = params.input;
     // load it from file
     let old_query_file = params.opts['previous_query_file'];
@@ -109,7 +109,7 @@ const queryExplain = async (params: CmdParams) => {
             log_query_explain_result(result);
         }
     }
-}*/
+}
 
 const queryRewrite = async (params: CmdParams) => {
     params.vals[0] = "Rewrite the query to proudce the same output in a more readable way.";
@@ -189,7 +189,7 @@ const queryCommands = {
     describe: queryExplain,
     rewrite: queryRewrite,
     transcode: queryTranscode,
-    //diff: queryDiff,
+    diff: queryDiff,
     run: queryRun,
 };
 
