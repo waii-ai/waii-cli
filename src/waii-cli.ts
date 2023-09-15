@@ -12,43 +12,72 @@ import { semanticCommands } from "./semantic-commands";
 import { historyCommands } from './history-commands';
 
 const CONF_FILE = '~/.waii/conf.yaml';
-const DEFAULT_API_KEY_IN_TEMPLATE='<your_waii_api_key_here>'
+const DEFAULT_API_KEY_IN_TEMPLATE = '<your_waii_api_key_here>'
 
-const help = () => {
-    console.log('Usage: waii <cmd> <subcommand> <values> <flags>');
-    console.log('')
-    console.log('Commands and subcommands')
-    console.log('========================')
-    printCommands(callTree)
-    console.log('')
-    console.log('Examples')
-    console.log('========')
-    console.log('   waii database list')
-    console.log('   waii database list --format json')
-    console.log('   waii context list')
-    console.log('   waii context list --format json')
-    console.log('   waii schema describe schema_name')
-    console.log('   waii table describe schema_name.table_name')
-    console.log('   waii history')
-    console.log('   waii history list --format json')
-    process.exit(-1);
+const help = (cmd: string = "", scmd: string = "") => {
+    if (cmd && scmd) {
+        let scmdTree = callTree[cmd as keyof typeof callTree];
+        let doc = scmdTree[scmd as keyof typeof scmdTree]['doc'];
+        if (!doc) {
+            help();
+            process.exit(-1);
+        }
+
+        console.log('');
+        console.log("Usage: waii "+cmd+" "+scmd+" <values> <flags>");
+        console.log('');
+        console.log("Description: "+doc['description']);
+        console.log('');
+        if (doc['parameters']) {
+            console.log("Values: "+((doc['parameters'] as string[])).join(', '));
+            console.log('');
+        }
+        if (doc['options']) {
+            console.log("Flags:");
+            for (const opt in (doc['options'] as any)) {
+                console.log("   " + opt + ": "+doc['options'][opt]);
+            }
+            console.log('');
+        }
+        if (doc['stid']) console.log("Stdin: "+doc['stdin']);
+        console.log('');
+        process.exit(-1);
+    } else {
+        console.log('Usage: waii <cmd> <subcommand> <values> <flags>');
+        console.log('')
+        console.log('Commands and subcommands')
+        console.log('========================')
+        console.log('');
+        printCommands(callTree)
+        console.log('Examples')
+        console.log('========')
+        console.log('   waii database list')
+        console.log('   waii database list --format json')
+        console.log('   waii context list')
+        console.log('   waii context list --format json')
+        console.log('   waii schema describe schema_name')
+        console.log('   waii table describe schema_name.table_name')
+        console.log('   waii history')
+        console.log('   waii history list --format json')
+        console.log('   ');
+        console.log('Use: "waii help <cmd> <scmd>" to get details of a command.')
+        process.exit(-1);
+    }
 }
 
-/**
- * Print all commands and its sub commands.
- * Ideally have to use args parser for printing help better.
- * @param commands
- * @param prefix
- */
-function printCommands(commands: any, prefix = '') {
-    for (const key in commands) {
-        if (typeof commands[key] === 'object') {
-            console.log(prefix + key + ':');
-            printCommands(commands[key], prefix + '  ');
+function printCommands(commands: any, level: number = 0) {
+    for (const o in commands) {
+        process.stdout.write("   ".repeat(level) + o + ':');
+        if (level === 0) {
+            console.log("");
+            printCommands(commands[o], level + 1);
         } else {
-            console.log(prefix + key);
+            if (typeof commands[o] === 'object') {
+                console.log(" ".repeat(22-o.length-4) + (commands[o]['doc'] ? commands[o]['doc']['description'] : ''));
+            }
         }
     }
+    console.log('');
 }
 
 const callTree = {
@@ -101,8 +130,12 @@ const initialize = async () => {
 const main = async () => {
     try {
         let params = await parseInput(process.argv);
+        if (params.cmd === 'help') {
+            help(params.scmd, params.vals[0]);
+        }
         let scmdTree = callTree[params.cmd as keyof typeof callTree];
-        let fn: (arg: CmdParams) => void = scmdTree[params.scmd as keyof typeof scmdTree];
+        let callObj = scmdTree[params.scmd as keyof typeof scmdTree];
+        let fn: (arg: CmdParams) => void = callObj['fn'];
         if (!fn) {
             throw Error("Unknown operation.");
         }

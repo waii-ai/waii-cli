@@ -71,6 +71,15 @@ const printHistory = (history: GeneratedQueryHistoryEntry[], limit: number) => {
     }
 }
 
+const historyListDoc = {
+    description: "Show the query history.",
+    parameters: [],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+        limit: "choose how many items to list."
+    }
+};
 const historyList = async (params: CmdParams) => {
     let limit = 10
     if (params.opts['limit']) {
@@ -94,7 +103,7 @@ const historyList = async (params: CmdParams) => {
 }
 
 const historyCommands = {
-    list: historyList,
+    list: {fn: historyList, doc: historyListDoc}
 };
 
 export { historyCommands };

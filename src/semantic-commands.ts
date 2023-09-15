@@ -26,6 +26,14 @@ const printStatements = (statements?: SemanticStatement[]) => {
     p.printTable();
 }
 
+const contextListDoc = {
+    description: "List all semantic context of the current database.",
+    parameters: [],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+    }
+};
 const contextList = async (params: CmdParams) => {
     let result = await WAII.SemanticContext.getSemanticContext();
     switch (params.opts['format']) {
@@ -39,6 +47,13 @@ const contextList = async (params: CmdParams) => {
     }
 }
 
+const contextImportDoc = {
+    description: "Import semantic statements in bulk. Duplicates will be ignored.",
+    parameters: [],
+    stdin: "The statements to load. The input must be of the format returned by 'waii context list'.",
+    options: {
+    }
+};
 const contextImport = async (params: CmdParams) => {
     let context = await WAII.SemanticContext.getSemanticContext();
     let importContext = JSON.parse(params.input);
@@ -72,6 +87,15 @@ const contextImport = async (params: CmdParams) => {
     console.log("Read ", totalCounter, " statement(s), ", "imported ", importCounter, " statement(s)");
 }
 
+const contextAddDoc = {
+    description: "Create a new semantic statement in the semantic context.",
+    parameters: [""],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+        s: "The scope of the statement: [[[[<db>].<schema>].<table>].<column>]"
+    }
+};
 const contextAdd = async (params: CmdParams) => {
     let stmt: SemanticStatement = new SemanticStatement(
         params.opts['s'],
@@ -93,6 +117,14 @@ const contextAdd = async (params: CmdParams) => {
     }
 }
 
+const contextDeleteDoc = {
+    description: "Delete a statement from the semantic context.",
+    parameters: ["uuid of the statement to be deleted."],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json."
+    }
+};
 const contextDelete = async (params: CmdParams) => {
     let result = await WAII.SemanticContext.modifySemanticContext({
         updated: [],
@@ -110,10 +142,10 @@ const contextDelete = async (params: CmdParams) => {
 }
 
 const semanticCommands = {
-    list: contextList,
-    add: contextAdd,
-    delete: contextDelete,
-    import: contextImport
+    list: {fn: contextList, doc: contextListDoc},
+    add: {fn: contextAdd, doc: contextAddDoc},
+    delete: {fn: contextDelete, doc: contextDeleteDoc},
+    import: {fn: contextImport, doc: contextImportDoc}
 };
 
 export { semanticCommands };

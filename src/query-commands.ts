@@ -13,10 +13,24 @@ const printQuery = (query: string | undefined) => {
     console.log(highlight(query, {language: 'sql', ignoreIllegals: true}))
 }
 
+const queryCreateDoc = {
+    description: "Generate a query from text. Pass a question or instructions and receive the query in response.",
+    parameters: ["ask - a question or set of instructions to generate the query."],
+    stdin: "If there is no argument to the command, stdin will be interpreted as the question, instructions.",
+    options: {
+        format: "choose the format of the response: text or json",
+        dialect: "choose the database backend: snowflake or postgres"
+    }
+};
 const queryCreate = async (params: CmdParams) => {
     let dialect = params.opts['dialect']
+    let ask = params.vals[0];
 
-    let result = await WAII.Query.generate({ask: params.vals[0], dialect: dialect});
+    if (!ask) {
+        ask = params.input;
+    }
+
+    let result = await WAII.Query.generate({ask: ask, dialect: dialect});
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -28,6 +42,16 @@ const queryCreate = async (params: CmdParams) => {
     }
 }
 
+const queryUpdateDoc = {
+    description: "Update a query from text. Pass a question or instructions and receive the query in response.",
+    parameters: ["instructions - a set of instructions to update the query."],
+    stdin: "The query to update",
+    options: {
+        format: "choose the format of the response: text or json.",
+        dialect: "choose the database backend: snowflake or postgres.",
+        schema: "optional schema name that the query uses."
+    }
+};
 const queryUpdate = async (params: CmdParams) => {
     let query = params.input;
     let dialect = params.opts['dialect']
@@ -73,6 +97,14 @@ const log_query_explain_result = (result: any) => {
     console.log((result.detailed_steps ? result.detailed_steps : []).join('\n\n'));
 }
 
+const queryExplainDoc = {
+    description: "Explain a query.",
+    parameters: ["query - the query to explain"],
+    stdin: "If there is no query in the arguments, query is read from stdin.",
+    options: {
+        format: "choose the format of the response: text or json.",
+    }
+};
 const queryExplain = async (params: CmdParams) => {
     let query = params.input;
     let result = await WAII.Query.describe({query: query});
@@ -87,18 +119,45 @@ const queryExplain = async (params: CmdParams) => {
     }
 }
 
+const queryDiffDoc = {
+    description: "Compare two queries and explain the differences.",
+    parameters: ["qf_1: the first query", "qf_2: the second query"],
+    stdin: "qf_1 can be optionally read from stin",
+    options: {
+        format: "choose the format of the response: text or json.",
+        dialect: "choose the database backend: snowflake or postgres.",
+        qf_1: "filename of a file containing the first query",
+        qf_2: "filename of a file containing the second query"
+    }
+};
 const queryDiff = async (params: CmdParams) => {
-    let query = params.input;
-    // load it from file
-    let old_query_file = params.opts['previous_query_file'];
+    let query = "";
+    let qf_1 = params.opts['qf_1'];
+    let qf_2 = params.opts['qf_2'];
     let prev_query = ""
-    if (old_query_file) {
-        let fs = require('fs');
-        prev_query = fs.readFileSync(old_query_file, 'utf8');
+
+    if (!qf_1) {
+        prev_query = params.input;
     } else {
-        console.error("You must specify a previous query file to diff against by using -previous_query_file.");
+        let fs = require('fs');
+        prev_query = fs.readFileSync(qf_1, 'utf8');
+    } 
+    
+    if(!prev_query) {
+        console.error("Could not find first query.");
         process.exit(-1);
     }
+
+    if (qf_2) {
+        let fs = require('fs');
+        query = fs.readFileSync(qf_2, 'utf8');
+    }
+
+    if (!query) {
+        console.error("Could not find second query.");
+        process.exit(-1);
+    }
+
     let result = await WAII.Query.diff({query: query, previous_query: prev_query});
     switch (params.opts['format']) {
         case 'json': {
@@ -111,11 +170,30 @@ const queryDiff = async (params: CmdParams) => {
     }
 }
 
+const queryRewriteDoc = {
+    description: "Rewrite the query in a more readable and performant way.",
+    parameters: [],
+    stdin: "The query to rewrite",
+    options: {
+        format: "choose the format of the response: text or json",
+        dialect: "choose the database backend: snowflake or postgres"
+    }
+};
 const queryRewrite = async (params: CmdParams) => {
-    params.vals[0] = "Rewrite the query to proudce the same output in a more readable way.";
+    params.vals[0] = "Rewrite the query to proudce the same output in a more readable and performant way.";
     await queryUpdate(params);
 }
 
+const queryTranscodeDoc = {
+    description: "Translate a query from one dialect to another.",
+    parameters: [""],
+    stdin: "The query to translate.",
+    options: {
+        format: "choose the format of the response: text or json",
+        from: "choose the database backend to translate from: snowflake or postgres",
+        to: "choose the database backend to translate to: snowflake or postgres"
+    }
+};
 const queryTranscode = async (params: CmdParams) => {
     let from_dialect = params.opts['from']
     let to_dialect = params.opts['to'] ? params.opts['to'] : 'Snowflake';
@@ -132,19 +210,25 @@ const queryTranscode = async (params: CmdParams) => {
 import {Table} from 'console-table-printer';
 import {TableName} from "waii-sdk-js/dist/clients/database/src/Database";
 
+const queryRunDoc = {
+    description: "Execute the query and return the results",
+    parameters: ["query - you can specify the query to run as a parameter."],
+    stdin: "If no parameters are specified, the query to run will be read from stdin.",
+    options: {
+        format: "choose the format of the response: text or json",
+    }
+};
 const queryRun = async (params: CmdParams) => {
-    let example_command_str = "`cat query.sql | waii query run` or `echo 'select 1' | waii query run`"
 
-    if (params.vals.length > 0) {
-        console.error("You cannot specify a SQL query as a parameter to run when using the `waii query run` command. " +
-            "You should send the query in as input of the command. e.g. " + example_command_str);
-        process.exit(-1);
+    let query = "";
+    if (params.vals.length < 1 || !params.vals[0]) {
+        query = params.input;
+    } else {
+        query = params.vals[0];
     }
 
-    let query = params.input;
-
     if (!query) {
-        console.error("No query specified. You should specify query via input: e.g. " + example_command_str);
+        console.error("No query specified.");
         process.exit(-1);
     }
 
@@ -183,14 +267,14 @@ const queryRun = async (params: CmdParams) => {
 
 
 const queryCommands = {
-    create: queryCreate,
-    update: queryUpdate,
-    explain: queryExplain,
-    describe: queryExplain,
-    rewrite: queryRewrite,
-    transcode: queryTranscode,
-    diff: queryDiff,
-    run: queryRun,
+    create: {fn: queryCreate, doc: queryCreateDoc},
+    update: {fn: queryUpdate, doc: queryUpdateDoc},
+    explain: {fn: queryExplain, doc: queryExplainDoc},
+    describe: {fn: queryExplain, doc: queryDiffDoc},
+    rewrite: {fn: queryRewrite, doc: queryRewriteDoc},
+    transcode: {fn: queryTranscode, doc: queryTranscodeDoc},
+    diff: {fn: queryDiff, doc: queryDiffDoc},
+    run: {fn: queryRun, doc: queryRunDoc}
 };
 
 export {queryCommands, printQuery}

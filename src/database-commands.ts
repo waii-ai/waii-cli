@@ -44,7 +44,14 @@ const printConnectors = (connectors?: DBConnection[]) => {
     }
 }
 
-
+const databaseListDoc = {
+    description: "List all the configured databases.",
+    parameters: [],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+    }
+};
 const databaseList = async (params: CmdParams) => {
     let result = await WAII.Database.getConnections();
     switch (params.opts['format']) {
@@ -58,6 +65,14 @@ const databaseList = async (params: CmdParams) => {
     }
 }
 
+const databaseDeleteDoc = {
+    description: "Delete a database connection.",
+    parameters: ["url - the database key to be deleted."],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+    }
+};
 const databaseDelete = async (params: CmdParams) => {
     let result = await WAII.Database.modifyConnections({removed: [params.vals[0]]});
     switch (params.opts['format']) {
@@ -71,6 +86,20 @@ const databaseDelete = async (params: CmdParams) => {
     }
 }
 
+const databaseAddDoc = {
+    description: "Add a database connection.",
+    parameters: [],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+        a: "account name",
+        d: "database name",
+        w: "warehouse name",
+        r: "role name",
+        u: "user name",
+        p: "password"
+    }
+};
 const databaseAdd = async (params: CmdParams) => {
     let result = await WAII.Database.modifyConnections(
         {
@@ -97,10 +126,25 @@ const databaseAdd = async (params: CmdParams) => {
     }
 }
 
+const databaseActivateDoc = {
+    description: "Activate a database connection. Most other commands will use the database chosen here.",
+    parameters: ["url - the key of the database connection."],
+    stdin: "",
+    options: {
+    }
+};
 const databaseActivate = async (params: CmdParams) => {
     await WAII.Database.activateConnection(params.vals[0]);
 }
 
+const databaseDescribeDoc = {
+    description: "Describe the current database.",
+    parameters: [],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+    }
+};
 const databaseDescribe = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
     switch (params.opts['format']) {
@@ -146,6 +190,14 @@ const databaseDescribe = async (params: CmdParams) => {
     }
 }
 
+const schemaListDoc = {
+    description: "Show all available schemas.",
+    parameters: [],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+    }
+};
 const schemaList = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
     if (!result.catalogs || result.catalogs.length === 0) {
@@ -179,6 +231,14 @@ const schemaList = async (params: CmdParams) => {
     }
 }
 
+const schemaDescribeDoc = {
+    description: "Show the details of a schema.",
+    parameters: ["<db>.<schema> - name of the schema to describe."],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+    }
+};
 const schemaDescribe = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
     let schema = null;
@@ -269,7 +329,14 @@ function formatStrings(list: string[]): string {
     return output;
 }
 
-
+const tableListDoc = {
+    description: "List all the tables in a database.",
+    parameters: [],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+    }
+};
 const tableList = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
     if (!result.catalogs || result.catalogs.length === 0) {
@@ -310,6 +377,14 @@ const tableList = async (params: CmdParams) => {
     }
 }
 
+const tableDescribeDoc = {
+    description: "Show the details of a table.",
+    parameters: ["<db>.<schema>.<table> - table name of the table to describe."],
+    stdin: "",
+    options: {
+        format: "choose the format of the response: text or json.",
+    }
+};
 const tableDescribe = async (params: CmdParams) => {
     // params.vals[0] is table name, which can be <db_name>.<schema_name>.<table_name>, or <schema_name>.<table_name> or <table_name>
     // if any of db_name or schema_name is not provided, use default db_name and schema_name (*)
@@ -391,6 +466,13 @@ const tableDescribe = async (params: CmdParams) => {
     }
 }
 
+const updateTableDescriptionDoc = {
+    description: "Update the textual description of a table.",
+    parameters: ["<db>.<schema>.<table> - name of the table to change", "description - description to use."],
+    stdin: "",
+    options: {
+    }
+};
 const updateTableDescription = async (params: CmdParams) => {
     let table_name = params.vals[0]
     let description = params.vals[1]
@@ -416,6 +498,13 @@ const updateTableDescription = async (params: CmdParams) => {
     })
 }
 
+const schemaUpdateDescriptionDoc = {
+    description: "Update the textual description of a schema.",
+    parameters: ["<db>.<schema> - name of the schema to change", "description - description to use."],
+    stdin: "",
+    options: {
+    }
+};
 const schemaUpdateDescription = async (params: CmdParams) => {
     let name = params.vals[0];
     let description = params.vals[1];
@@ -497,6 +586,13 @@ const findSchema = async (name: string):Promise<Schema> => {
     return schema;
 }
 
+const schemaUpdateQuestionDoc = {
+    description: "Update the common questions stored for a schema.",
+    parameters: ["<db>.<schema> - name of the schema to change", "questions - three individual questions to use."],
+    stdin: "Qestions can be read (one per line) from the stdin.",
+    options: {
+    }
+};
 const schemaUpdateQuestions = async (params: CmdParams) => {
     let name = params.vals[0];
     let database_name = getDBName(name);
@@ -531,6 +627,13 @@ const schemaUpdateQuestions = async (params: CmdParams) => {
     });
 }
 
+const schemaUpdateSummaryDoc = {
+    description: "Update the textual summary of a schema.",
+    parameters: ["<db>.<schema> - name of the schema to change", "description - description to use."],
+    stdin: "Summary can be read from stdin.",
+    options: {
+    }
+};
 const schemaUpdateSummary = async (params: CmdParams) => {
     let name = params.vals[0];
     let database_name = getDBName(name);
@@ -565,25 +668,25 @@ const schemaUpdateSummary = async (params: CmdParams) => {
 }
 
 const databaseCommands = {
-    list: databaseList,
-    add: databaseAdd,
-    delete: databaseDelete,
-    activate: databaseActivate,
-    describe: databaseDescribe,
+    list: {fn: databaseList, doc: databaseListDoc},
+    add: {fn: databaseAdd, doc: databaseAddDoc},
+    delete: {fn: databaseDelete, doc: databaseDeleteDoc},
+    activate: {fn: databaseActivate, doc: databaseActivateDoc},
+    describe: {fn: databaseDescribe, doc: databaseDescribeDoc}
 };
 
 const schemaCommands = {
-    describe: schemaDescribe,
-    list: schemaList,
-    update: schemaUpdateDescription,
-    update_questions: schemaUpdateQuestions,
-    update_summary: schemaUpdateSummary
+    describe: {fn: schemaDescribe, doc: schemaDescribeDoc},
+    list: {fn: schemaList, doc: schemaListDoc},
+    update: {fn: schemaUpdateDescription, doc: schemaUpdateDescriptionDoc},
+    update_questions: {fn: schemaUpdateQuestions, doc: schemaUpdateQuestionDoc},
+    update_summary: {fn: schemaUpdateSummary, doc: schemaUpdateSummaryDoc}
 };
 
 const tableCommands = {
-    describe: tableDescribe,
-    list: tableList,
-    update: updateTableDescription
+    describe: {fn: tableDescribe, doc: tableDescribeDoc},
+    list: {fn: tableList, doc: tableListDoc},
+    update: {fn: updateTableDescription, doc: updateTableDescriptionDoc}
 }
 
 export {databaseCommands, schemaCommands, tableCommands};
