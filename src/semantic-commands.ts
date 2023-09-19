@@ -36,6 +36,12 @@ const contextListDoc = {
 };
 const contextList = async (params: CmdParams) => {
     let result = await WAII.SemanticContext.getSemanticContext();
+    // filter result to only show the statements which has id != null
+    let filteredResult = []
+    if (result.semantic_context !== undefined) {
+        result.semantic_context = result.semantic_context.filter((stmt: SemanticStatement) => stmt.id !== null);
+    }
+
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
