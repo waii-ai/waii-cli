@@ -57,6 +57,12 @@ const queryUpdate = async (params: CmdParams) => {
     let dialect = params.opts['dialect']
     let schema = params.opts['schema']
 
+    if (!query) {
+        console.error("No query specified, you should specify a query via stdin, such as\n `cat query.sql | waii query " +
+            "update \"Order the result by first name\"`, or\n `echo \"SELECT * FROM orders\" | waii query update \"Order the result by name\"`");
+        process.exit(-1);
+    }
+
     let descResult = await WAII.Query.describe({query: query});
     let genResult = await WAII.Query.generate({
         ask: params.vals[0],
