@@ -94,8 +94,7 @@ const historyList = async (params: CmdParams) => {
         }
         default: {
             if (!result.history) {
-                console.log("No history found.");
-                return;
+                throw new Error("No history found.");
             }
             printHistory(result.history, limit);
         }

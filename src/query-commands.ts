@@ -1,5 +1,5 @@
 import WAII from 'waii-sdk-js'
-import {CmdParams} from './cmd-line-parser';
+import {ArgumentError, CmdParams} from './cmd-line-parser';
 
 export interface IIndexable {
     [key: string]: any;
@@ -58,9 +58,7 @@ const queryUpdate = async (params: CmdParams) => {
     let schema = params.opts['schema']
 
     if (!query) {
-        console.error("No query specified, you should specify a query via stdin, such as\n `cat query.sql | waii query " +
-            "update \"Order the result by first name\"`, or\n `echo \"SELECT * FROM orders\" | waii query update \"Order the result by name\"`");
-        process.exit(-1);
+        throw new ArgumentError("No query specified.");
     }
 
     let descResult = await WAII.Query.describe({query: query});
@@ -150,8 +148,7 @@ const queryDiff = async (params: CmdParams) => {
     } 
     
     if(!prev_query) {
-        console.error("Could not find first query.");
-        process.exit(-1);
+        throw new ArgumentError("Could not find first query.");
     }
 
     if (qf_2) {
@@ -160,8 +157,7 @@ const queryDiff = async (params: CmdParams) => {
     }
 
     if (!query) {
-        console.error("Could not find second query.");
-        process.exit(-1);
+        throw new ArgumentError("Could not find second query.");
     }
 
     let result = await WAII.Query.diff({query: query, previous_query: prev_query});
@@ -234,8 +230,7 @@ const queryRun = async (params: CmdParams) => {
     }
 
     if (!query) {
-        console.error("No query specified.");
-        process.exit(-1);
+        throw new ArgumentError("No query specified.");
     }
 
     let result = await WAII.Query.run({query: query});

@@ -1,7 +1,7 @@
 import WAII from 'waii-sdk-js'
 import {Schema, SchemaDescription} from 'waii-sdk-js/dist/clients/database/src/Database';
 import {DBConnection} from "waii-sdk-js/dist/clients/database/src/Database";
-import {CmdParams} from './cmd-line-parser';
+import {ArgumentError, CmdParams} from './cmd-line-parser';
 import {Table} from 'console-table-printer';
 
 const printConnectors = (connectors?: DBConnection[]) => {
@@ -14,13 +14,13 @@ const printConnectors = (connectors?: DBConnection[]) => {
         {name: 'user', title: 'username', alignment: 'left'}
     ];
 
-    let default_scope = WAII.Database.getDefaultConnection()
+    let default_scope = WAII.Database.getDefaultConnection();
 
     // If connectors are provided, iterate through them and create a table for each one
     if (connectors) {
         for (const connection of connectors) {
             // Create a new Table with the defined columns and the connection.key as the title
-            let config = {}
+            let config = {};
             if (connection.key == default_scope) {
                 config = {color: 'green'}
             }
@@ -92,12 +92,12 @@ const databaseAddDoc = {
     stdin: "",
     options: {
         format: "choose the format of the response: text or json.",
-        a: "account name",
-        d: "database name",
-        w: "warehouse name",
-        r: "role name",
-        u: "user name",
-        p: "password"
+        account: "account name",
+        db: "database name",
+        warehouse: "warehouse name",
+        role: "role name",
+        user: "user name",
+        pass: "password"
     }
 };
 const databaseAdd = async (params: CmdParams) => {
@@ -105,12 +105,12 @@ const databaseAdd = async (params: CmdParams) => {
         {
             updated: [{
                 key: '',
-                account_name: params.opts['a'],
-                database: params.opts['d'],
-                warehouse: params.opts['w'],
-                role: params.opts['r'],
-                username: params.opts['u'],
-                password: params.opts['p'],
+                account_name: params.opts['account'],
+                database: params.opts['db'],
+                warehouse: params.opts['warehouse'],
+                role: params.opts['role'],
+                username: params.opts['user'],
+                password: params.opts['pass'],
                 db_type: 'snowflake',
             }]
         }
@@ -154,8 +154,7 @@ const databaseDescribe = async (params: CmdParams) => {
         }
         default: {
             if (!result.catalogs || !result.catalogs[0].schemas) {
-                console.log("Database is empty.");
-                return;
+                throw new Error("Database is empty.");
             }
 
             // print table of database
@@ -201,12 +200,10 @@ const schemaListDoc = {
 const schemaList = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
     if (!result.catalogs || result.catalogs.length === 0) {
-        console.log("No databases configured.");
-        return;
+        throw new Error("No databases configured.");
     }
     if (!result.catalogs[0].schemas) {
-        console.log("No schemas found");
-        return;
+        throw new Error("No schemas found");
     }
     switch (params.opts['format']) {
         case 'json': {
@@ -242,17 +239,22 @@ const schemaDescribeDoc = {
 const schemaDescribe = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
     let schema = null;
+    
     if (!result.catalogs || result.catalogs.length === 0) {
-        console.log("No databases configured.");
-        return;
+        throw new Error("No databases configured.");
     }
+
     if (!result.catalogs[0].schemas) {
-        console.log("No schemas found");
-        return;
+        throw new Error("No schemas found.");
+    }
+
+    if (params.vals.length < 1) {
+        throw new ArgumentError("No schema provided.")
     }
 
     // schema name to describe
-    let target_schema_name = params.vals[0]
+    let target_schema_name = params.vals[0];
+
     // if target schema name includes ".", get schema name from it (last element)
     if (target_schema_name.includes(".")) {
         let arr = target_schema_name.split(".")
@@ -265,8 +267,7 @@ const schemaDescribe = async (params: CmdParams) => {
         }
     }
     if (!schema) {
-        console.error("Can't find schema: " + target_schema_name);
-        return;
+        throw new Error("Can't find schema: " + target_schema_name);
     }
     switch (params.opts['format']) {
         case 'json': {
@@ -340,13 +341,11 @@ const tableListDoc = {
 const tableList = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
     if (!result.catalogs || result.catalogs.length === 0) {
-        console.log("No databases configured.");
-        return;
+        throw new Error("No databases configured.");
     }
 
     if (!result.catalogs[0].schemas) {
-        console.log("No tables found.");
-        return;
+        throw new Error("No tables found.");
     }
 
     switch (params.opts['format']) {
@@ -407,15 +406,13 @@ const tableDescribe = async (params: CmdParams) => {
 
     let result = await WAII.Database.getCatalogs();
     if (!result.catalogs || result.catalogs.length === 0) {
-        console.log("No databases configured.");
-        return;
+        throw new Error("No databases configured.");
     }
 
     if (!result.catalogs[0].schemas) {
-        console.log("No schemas found.");
-        return;
+        throw new Error("No schemas found.");
     }
-    let tables = []
+    let tables = [];
     for (const schema of result.catalogs[0].schemas) {
         for (const table of (schema.tables ? schema.tables : [])) {
             // try to match table, db and schema name
@@ -428,13 +425,12 @@ const tableDescribe = async (params: CmdParams) => {
     }
 
     if (tables.length > 1) {
-        console.error("Too many tables found. Please specify the schema_name too. Tables=[" + tables.map((t) => t.name.schema_name + "." + t.name.table_name).join(", ") + "]")
-        process.exit(-1)
+        throw new Error("Too many tables found. Please specify the schema_name too. Tables=[" 
+                                + tables.map((t) => t.name.schema_name + "." + t.name.table_name).join(", ") + "]");
     }
 
     if (tables.length == 0) {
-        console.error("Can't find table: " + params.vals[0]);
-        process.exit(-1);
+        throw new Error("Can't find table: " + params.vals[0]);
     }
     for (const table of tables) {
         switch (params.opts['format']) {
@@ -477,15 +473,13 @@ const updateTableDescription = async (params: CmdParams) => {
     let table_name = params.vals[0]
     let description = params.vals[1]
     if (!table_name || !description) {
-        console.error("table_name and description are required")
-        process.exit(-1)
+        throw new ArgumentError("table_name and description are required");
     }
 
     // use "." to split table_name into db_name, schema_name and table_name
-    let arr = table_name.split(".")
+    let arr = table_name.split(".");
     if (arr.length != 3) {
-        console.error("table_name should be <db_name>.<schema_name>.<table_name>")
-        process.exit(-1)
+        throw new Error("table_name should be <db_name>.<schema_name>.<table_name>");
     }
 
     await WAII.Database.updateTableDescription({
@@ -512,16 +506,14 @@ const schemaUpdateDescription = async (params: CmdParams) => {
     let database_name = null;
 
     if (!schema_name || !description) {
-        console.error("database name, schema_name and description are required");
-        process.exit(-1);
+        throw new ArgumentError("database name, schema_name and description are required");
     }
 
     // if target schema name includes ".", get schema name from it (last element)
     if (name.includes(".")) {
         let arr = name.split(".");
         if (arr.length != 2) {
-            console.error("name given is not of the form <db name>.<schema name>");
-            process.exit(-1);
+            throw new Error("name given is not of the form <db name>.<schema name>");
         }
         schema_name = arr[1];
         database_name = arr[0];
@@ -543,20 +535,18 @@ const schemaUpdateDescription = async (params: CmdParams) => {
 
 const getDBName = (name: string): string => {
     if (!name) {
-        console.error("Invalid name: ", name);
-        process.exit(-1);
+        throw new ArgumentError("Invalid database name: " + name);
     }
     return name.split('.')[0];
 }
 
 const getSchemaName = (name: string): string => {
     if (!name) {
-        console.error("Invalid name: ", name);
-        process.exit(-1);
+        throw new ArgumentError("Invalid schema name: " + name);
     }
 
     if (name.split('.').length < 2) {
-        console.error("Invalid name: ", name);
+        throw new Error("Invalid name: " + name);
     }
     return name.split('.')[1];
 }
@@ -565,12 +555,10 @@ const findSchema = async (name: string):Promise<Schema> => {
 
     let result = await WAII.Database.getCatalogs();
     if (!result.catalogs || result.catalogs.length === 0) {
-        console.log("No databases configured.");
-        process.exit(-1);
+        throw new Error("No databases configured.");
     }
     if (!result.catalogs[0].schemas) {
-        console.log("No schemas found");
-        process.exit(-1);
+        throw new Error("No schemas found");
     }
 
     let schema = null;
@@ -580,8 +568,7 @@ const findSchema = async (name: string):Promise<Schema> => {
         }
     }
     if (!schema) {
-        console.error("Can't find schema: " + name);
-        process.exit(-1);
+        throw new Error("Can't find schema: " + name);
     }
     return schema;
 }
@@ -603,8 +590,7 @@ const schemaUpdateQuestions = async (params: CmdParams) => {
     if (questions.length < 3) {
         questions = params.input.split("\n");
         if (questions.length < 3) {
-            console.error("Need 3 questions.");            
-            process.exit(-1);
+            throw new ArgumentError("Need 3 questions.");            
         }
     }
     questions = questions.slice(0,3);
@@ -644,8 +630,7 @@ const schemaUpdateSummary = async (params: CmdParams) => {
     if (!summary) {
         summary = params.input;
         if (!summary) {
-            console.error("Need valid summary.");
-            process.exit(-1);
+            throw new ArgumentError("Need valid summary.");
         }
     }
 

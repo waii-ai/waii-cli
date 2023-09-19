@@ -9,6 +9,8 @@ type CmdParams = {
     input: string
 }
 
+class ArgumentError extends Error{};
+
 async function readStdin() {
     const rl = readline.createInterface({
         input: process.stdin
@@ -25,7 +27,7 @@ async function readStdin() {
 
 const parseInput = async (args: string[]) => {
     if (args.length < 4) {
-        throw Error("Too few parameters.")
+        throw new ArgumentError("Too few parameters.")
     }
 
     const params: CmdParams = {
@@ -63,7 +65,7 @@ const parseInput = async (args: string[]) => {
                 inFlag = true;
                 flags.push({ flag: a, value: '' })
             } else {
-                throw Error('Command line flags can only have one value.');
+                throw new ArgumentError('Command line flags can only have one value.');
             }
         }
     }
@@ -85,4 +87,4 @@ const parseInput = async (args: string[]) => {
     return params;
 }
 
-export { parseInput, CmdParams }
+export { parseInput, CmdParams, ArgumentError }

@@ -5,7 +5,7 @@ import process = require("node:process")
 import * as fs from 'fs'
 import * as path from 'path';
 import * as YAML from 'yaml'
-import { parseInput, CmdParams } from "./cmd-line-parser";
+import { parseInput, CmdParams, ArgumentError } from "./cmd-line-parser";
 import { databaseCommands, schemaCommands, tableCommands } from "./database-commands";
 import { queryCommands } from "./query-commands";
 import { semanticCommands } from "./semantic-commands";
@@ -19,49 +19,46 @@ const help = (cmd: string = "", scmd: string = "") => {
         let scmdTree = callTree[cmd as keyof typeof callTree];
         let doc = scmdTree[scmd as keyof typeof scmdTree]['doc'];
         if (!doc) {
-            help();
-            process.exit(-1);
+            throw new ArgumentError("No help for " + cmd + " " + scmd);
         }
 
-        console.log('');
-        console.log("Usage: waii "+cmd+" "+scmd+" <values> <flags>");
-        console.log('');
-        console.log("Description: "+doc['description']);
-        console.log('');
+        console.error('');
+        console.error("Usage: waii "+cmd+" "+scmd+" <values> <flags>");
+        console.error('');
+        console.error("Description: "+doc['description']);
+        console.error('');
         if (doc['parameters']) {
-            console.log("Values: "+((doc['parameters'] as string[])).join(', '));
-            console.log('');
+            console.error("Values: "+((doc['parameters'] as string[])).join(', '));
+            console.error('');
         }
         if (doc['options']) {
-            console.log("Flags:");
+            console.error("Flags:");
             for (const opt in (doc['options'] as any)) {
-                console.log("   " + opt + ": "+doc['options'][opt]);
+                console.error("   " + opt + ": "+doc['options'][opt]);
             }
-            console.log('');
+            console.error('');
         }
         if (doc['stid']) console.log("Stdin: "+doc['stdin']);
-        console.log('');
-        process.exit(-1);
+        console.error('');
     } else {
-        console.log('Usage: waii <cmd> <subcommand> <values> <flags>');
-        console.log('')
-        console.log('Commands and subcommands')
-        console.log('========================')
-        console.log('');
+        console.error('Usage: waii <cmd> <subcommand> <values> <flags>');
+        console.error('')
+        console.error('Commands and subcommands')
+        console.error('========================')
+        console.error('');
         printCommands(callTree)
-        console.log('Examples')
-        console.log('========')
-        console.log('   waii database list')
-        console.log('   waii database list --format json')
-        console.log('   waii context list')
-        console.log('   waii context list --format json')
-        console.log('   waii schema describe schema_name')
-        console.log('   waii table describe schema_name.table_name')
-        console.log('   waii history')
-        console.log('   waii history list --format json')
-        console.log('   ');
-        console.log('Use: "waii help <cmd> <scmd>" to get details of a command.')
-        process.exit(-1);
+        console.error('Examples')
+        console.error('========')
+        console.error('   waii database list')
+        console.error('   waii database list --format json')
+        console.error('   waii context list')
+        console.error('   waii context list --format json')
+        console.error('   waii schema describe schema_name')
+        console.error('   waii table describe schema_name.table_name')
+        console.error('   waii history')
+        console.error('   waii history list --format json')
+        console.error('   ');
+        console.error('Use: "waii help <cmd> <scmd>" to get details of a command.')
     }
 }
 
@@ -134,21 +131,45 @@ const main = async () => {
             help(params.scmd, params.vals[0]);
         }
         let scmdTree = callTree[params.cmd as keyof typeof callTree];
+        if (!scmdTree) {
+            throw new ArgumentError("Unknown command " + params.cmd);
+        }
+
         let callObj = scmdTree[params.scmd as keyof typeof scmdTree];
+        if (!callObj) {
+            throw new ArgumentError("Unknown subcommand " + params.scmd);
+        }
+
         let fn: (arg: CmdParams) => void = callObj['fn'];
         if (!fn) {
-            throw Error("Unknown operation.");
+            throw new ArgumentError("Unknown operation.");
         }
         await initialize();
         await fn(params);
         process.exit(0);
     } catch (error) {
-        if (error instanceof Error) {
-            console.log(error.message);
+        if (error instanceof ArgumentError) {
+            console.error();
+            console.error("Error: ",error.message);
+            console.error();
+            console.error();
+            help();
+        } else if (error instanceof Error) {
+            console.error();
+            let msg = error.message;
+            try {
+                let obj = JSON.parse(error.message);
+                msg = obj.detail;
+            } catch (err) {}
+            console.error("Error: ", msg);
+            console.error();
+            console.error();
         } else {
             console.log(error);
         }
-        help();
+        process.exit(-1);
+    } finally {
+        process.exit(0);
     }
 }
 
