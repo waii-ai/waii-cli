@@ -7,7 +7,7 @@ If you want to point Waii to your local Waii instance, you can do so by modifyin
 First you need to get API key from your local Waii instance. You can do so by running the following command in your local Waii instance (Assume the Waii Python server is running on port 9859):
 
 ```bash
-curl -X 'GET' \
+curl -X 'POST' \
 'http://localhost:9859/api/get-access-key' \
 -H 'accept: application/json' \
 -H 'Content-Type: application/json' \
