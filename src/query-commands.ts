@@ -202,7 +202,7 @@ const queryTranscode = async (params: CmdParams) => {
     params.opts['dialect'] = to_dialect;
     let msg = "Rewrite the query to produce the same output in " + to_dialect
     if (from_dialect) {
-        msg += " to " + from_dialect;
+        msg += " from " + from_dialect;
     }
 
     params.vals[0] = msg
