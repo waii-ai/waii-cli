@@ -32,15 +32,15 @@ const printConnectors = (connectors?: DBConnection[], status?: {[key: string]: D
 
             let percentage = 1;
             if (status) {
-                let db_status = status[connection.key];
                 let total = 0;
                 let pending = 0;
+                let db_status = status[connection.key];
                 for (const schema in db_status.schema_status) {
                     let schema_status = db_status.schema_status[schema];
                     total += schema_status.n_total_tables;
                     pending += schema_status.n_pending_indexing_tables; 
                 }
-                percentage = (total - pending) / total;
+                percentage = (total > 0) ? (total - pending) / total : 1;
             }
 
             // Add the current connection to the table
@@ -53,7 +53,13 @@ const printConnectors = (connectors?: DBConnection[], status?: {[key: string]: D
             }, config);
 
             console.log("Key: "+connection.key);
-            console.log("Indexing status: "+`${percentage*100}%`);
+            if (status) {
+                let status_string = status[connection.key].status;
+                console.log("Indexing status: " + status_string);
+                if (status_string === "indexing") {
+                    console.log("Percent complete: "+`${Math.round(percentage * 100 * 100) / 100}%`);
+                }
+            }
 
             // Print the table
             p.printTable();
