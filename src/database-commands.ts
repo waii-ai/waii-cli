@@ -1,10 +1,10 @@
 import WAII from 'waii-sdk-js'
 import {Schema, SchemaDescription} from 'waii-sdk-js/dist/clients/database/src/Database';
-import {DBConnection} from "waii-sdk-js/dist/clients/database/src/Database";
+import {DBConnection, DBConnectionIndexingStatus, SchemaIndexingStatus} from "waii-sdk-js/dist/clients/database/src/Database";
 import {ArgumentError, CmdParams} from './cmd-line-parser';
 import {Table} from 'console-table-printer';
 
-const printConnectors = (connectors?: DBConnection[]) => {
+const printConnectors = (connectors?: DBConnection[], status?: {[key: string]: DBConnectionIndexingStatus;}) => {
     // Define the columns for the table, excluding the 'key' column
     const columns = [
         {name: 'account', title: 'account_name', alignment: 'left'},
@@ -18,6 +18,9 @@ const printConnectors = (connectors?: DBConnection[]) => {
 
     // If connectors are provided, iterate through them and create a table for each one
     if (connectors) {
+        
+        console.log();
+
         for (const connection of connectors) {
             // Create a new Table with the defined columns and the connection.key as the title
             let config = {};
@@ -25,7 +28,20 @@ const printConnectors = (connectors?: DBConnection[]) => {
                 config = {color: 'green'}
             }
 
-            const p = new Table({columns, title: connection.key});
+            const p = new Table({columns});
+
+            let percentage = 1;
+            if (status) {
+                let db_status = status[connection.key];
+                let total = 0;
+                let pending = 0;
+                for (const schema in db_status.schema_status) {
+                    let schema_status = db_status.schema_status[schema];
+                    total += schema_status.n_total_tables;
+                    pending += schema_status.n_pending_indexing_tables; 
+                }
+                percentage = (total - pending) / total;
+            }
 
             // Add the current connection to the table
             p.addRow({
@@ -35,6 +51,9 @@ const printConnectors = (connectors?: DBConnection[]) => {
                 role: connection.role,
                 user: connection.username
             }, config);
+
+            console.log("Key: "+connection.key);
+            console.log("Indexing status: "+`${percentage*100}%`);
 
             // Print the table
             p.printTable();
@@ -60,7 +79,7 @@ const databaseList = async (params: CmdParams) => {
             break;
         }
         default: {
-            printConnectors(result.connectors);
+            printConnectors(result.connectors, result.connector_status);
         }
     }
 }
