@@ -1,5 +1,6 @@
 import WAII from 'waii-sdk-js'
 import {ArgumentError, CmdParams} from './cmd-line-parser';
+import { js_beautify } from 'js-beautify';
 
 export interface IIndexable {
     [key: string]: any;
@@ -13,6 +14,10 @@ const printQuery = (query: string | undefined) => {
     console.log(highlight(query, {language: 'sql', ignoreIllegals: true}))
 }
 
+const ISODate = (str: any) => {
+    return str;
+}
+
 const queryCreateDoc = {
     description: "Generate a query from text. Pass a question or instructions and receive the query in response.",
     parameters: ["ask - a question or set of instructions to generate the query."],
@@ -22,6 +27,17 @@ const queryCreateDoc = {
         dialect: "choose the database backend: snowflake or postgres"
     }
 };
+const isStringJSON = (text: any) => {
+    if (typeof text !== "string") {
+        return false;
+    }
+    try {
+        JSON.parse(text);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
 const queryCreate = async (params: CmdParams) => {
     let dialect = params.opts['dialect']
     let ask = params.vals[0];
@@ -89,7 +105,7 @@ const log_query_explain_result = (result: any) => {
     console.log("Summary: \n--------");
     console.log(result.summary);
 
-    let tables = (result.tables ? result.tables : []).map((tname : TableName) => {
+    let tables = (result.tables ? result.tables : []).map((tname: TableName) => {
         return tname.schema_name + "." + tname.table_name;
     }).join('\n');
     if (tables) {
@@ -145,9 +161,9 @@ const queryDiff = async (params: CmdParams) => {
     } else {
         let fs = require('fs');
         prev_query = fs.readFileSync(qf_1, 'utf8');
-    } 
-    
-    if(!prev_query) {
+    }
+
+    if (!prev_query) {
         throw new ArgumentError("Could not find first query.");
     }
 
@@ -211,6 +227,7 @@ const queryTranscode = async (params: CmdParams) => {
 
 import {Table} from 'console-table-printer';
 import {TableName} from "waii-sdk-js/dist/clients/database/src/Database";
+import {highlight} from "cli-highlight";
 
 const queryRunDoc = {
     description: "Execute the query and return the results",
@@ -220,8 +237,18 @@ const queryRunDoc = {
         format: "choose the format of the response: text or json",
     }
 };
-const queryRun = async (params: CmdParams) => {
 
+const printPrettyConsole = (str: any) => {
+
+    const beautifulJavaScript = js_beautify(str, {
+        indent_size: 2,      // Number of spaces for indentation
+        space_in_empty_paren: true
+    });
+
+    console.log(highlight(beautifulJavaScript, {language: 'javascript', ignoreIllegals: true}))
+}
+
+const queryRun = async (params: CmdParams) => {
     let query = "";
     if (params.vals.length < 1 || !params.vals[0]) {
         query = params.input;
@@ -233,34 +260,41 @@ const queryRun = async (params: CmdParams) => {
         throw new ArgumentError("No query specified.");
     }
 
+    const connection = await WAII.Database.getConnections();
     let result = await WAII.Query.run({query: query});
-
     switch (params.opts['format']) {
         case 'json': {
-            console.log(JSON.stringify(result, null, 2));
+            printPrettyConsole(result);
             break;
         }
         default: {
             if (result.column_definitions && result.rows) {
-                // Define the columns based on the result's column definitions
-                const columns = result.column_definitions.map((c) => {
-                    return {name: c.name, alignment: 'left'}; // you can customize alignment here
-                });
+                if (connection.default_db_connection_key?.includes('mongodb://') ||
+                    connection.default_db_connection_key?.includes('mongodb+srv://')) {
+                    // @ts-ignore
+                    printPrettyConsole(result.rows[0]['DOC']);
+                    return;
+                } else {
+                    // Define the columns based on the result's column definitions
+                    const columns = result.column_definitions.map((c) => {
+                        return {name: c.name, alignment: 'left'}; // you can customize alignment here
+                    });
 
-                // Create a new Table with the columns
-                const p = new Table({columns});
+                    // Create a new Table with the columns
+                    const p = new Table({columns});
 
-                // Iterate through the rows and add them to the table
-                for (const row of result.rows) {
-                    const rowObj: { [key: string]: any } = {};
-                    for (const column of result.column_definitions) {
-                        rowObj[column.name] = (row as IIndexable)[column.name];
+                    // Iterate through the rows and add them to the table
+                    for (const row of result.rows) {
+                        const rowObj: { [key: string]: any } = {};
+                        for (const column of result.column_definitions) {
+                            rowObj[column.name] = (row as IIndexable)[column.name];
+                        }
+                        p.addRow(rowObj);
                     }
-                    p.addRow(rowObj);
-                }
 
-                // Print the table
-                p.printTable();
+                    // Print the table
+                    p.printTable();
+                }
             }
         }
     }
