@@ -4,7 +4,9 @@ import {DBConnection, DBConnectionIndexingStatus, SchemaIndexingStatus} from "wa
 import {ArgumentError, CmdParams} from './cmd-line-parser';
 import {Table} from 'console-table-printer';
 
-const printConnectors = (connectors?: DBConnection[], status?: {[key: string]: DBConnectionIndexingStatus;}) => {
+const printConnectors = (connectors?: DBConnection[], status?: {
+    [key: string]: DBConnectionIndexingStatus;
+}, keyWithIndexOnly?: boolean) => {
     // Define the columns for the table, excluding the 'key' column
     const columns = [
         {name: 'account', title: 'account_name', alignment: 'left'},
@@ -18,14 +20,20 @@ const printConnectors = (connectors?: DBConnection[], status?: {[key: string]: D
 
     // If connectors are provided, iterate through them and create a table for each one
     if (connectors) {
-        
-        console.log();
+        for (let i = 0; i < connectors.length; i++) {
+            const connection = connectors[i];
+            const default_conn_now = (connection.key == default_scope);
 
-        for (const connection of connectors) {
-            // Create a new Table with the defined columns and the connection.key as the title
-            let config = {};
-            if (connection.key == default_scope) {
-                config = {color: 'green'}
+            if (keyWithIndexOnly) {
+                const connectionToPrint = "[ " + (i+1) + " ] " + connection.key
+
+                // for default connection, print in green color
+                if (default_conn_now) {
+                    console.log("\x1b[32m%s\x1b[0m", connectionToPrint + " [Active]");
+                } else {
+                    console.log(connectionToPrint);
+                }
+                continue
             }
 
             const p = new Table({columns});
@@ -50,9 +58,14 @@ const printConnectors = (connectors?: DBConnection[], status?: {[key: string]: D
                 warehouse: connection.warehouse,
                 role: connection.role,
                 user: connection.username
-            }, config);
+            });
 
-            console.log("Key: "+connection.key);
+            if (default_conn_now) {
+                console.log("\x1b[32m%s\x1b[0m", "Key: " + connection.key + " [Active]");
+            }
+            else {
+                console.log("Key: " + connection.key);
+            }
             if (status) {
                 let status_string = status[connection.key].status;
                 console.log("Indexing status: " + status_string);
@@ -98,7 +111,49 @@ const databaseDeleteDoc = {
         format: "choose the format of the response: text or json.",
     }
 };
+
+const getDBConnectionKeyIfNotProvided = async (params: CmdParams) => {
+    if (params.vals.length === 0) {
+        // first get all connections
+        let result = await WAII.Database.getConnections();
+
+        if (!result.connectors || result.connectors.length === 0) {
+            throw new Error("No databases connection configured.");
+        }
+
+        // print all connections
+        printConnectors(result.connectors, undefined, true);
+
+        // print a msg and read from stdin
+        console.log("Please enter the index of the database connection to delete (1-N):");
+        let stdin = process.openStdin();
+        let id = await new Promise<number>((resolve, reject) => {
+            stdin.addListener("data", (d) => {
+                let input = d.toString().trim();
+                if (input === "q") {
+                    reject("User canceled");
+                }
+                let num = Number(input);
+                if (isNaN(num)) {
+                    console.log("Please enter a number:");
+                } else {
+                    resolve(num);
+                }
+            });
+        })
+
+        // check if the number within the range
+        if (id < 1 || id > result.connectors.length) {
+            throw new Error("Index out of range");
+        }
+
+        params.vals.push(result.connectors[id - 1].key);
+    }
+}
+
 const databaseDelete = async (params: CmdParams) => {
+    await getDBConnectionKeyIfNotProvided(params);
+
     let result = await WAII.Database.modifyConnections({removed: [params.vals[0]]});
     switch (params.opts['format']) {
         case 'json': {
@@ -274,6 +329,8 @@ const databaseActivateDoc = {
     }
 };
 const databaseActivate = async (params: CmdParams) => {
+    await getDBConnectionKeyIfNotProvided(params);
+
     await WAII.Database.activateConnection(params.vals[0]);
 }
 
