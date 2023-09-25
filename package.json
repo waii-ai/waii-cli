@@ -21,14 +21,16 @@
   },
   "dependencies": {
     "@pinojs/json-colorizer": "^4.0.0",
+    "@types/js-beautify": "^1.14.1",
     "bson": "^6.1.0",
     "cli-highlight": "2.1.11",
     "console-table-printer": "2.11.2",
     "fs": "^0.0.1-security",
+    "js-beautify": "^1.14.9",
     "ts-node": "^10.9.1",
+    "uri-js": "^4.4.1",
     "uuid": "^9.0.0",
     "waii-sdk-js": "^1.0.19",
-    "yaml": "^2.3.1",
-    "uri-js": "^4.4.1"
+    "yaml": "^2.3.1"
   }
 }
