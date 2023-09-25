@@ -20,9 +20,7 @@
     "type": "git"
   },
   "dependencies": {
-    "@pinojs/json-colorizer": "^4.0.0",
     "@types/js-beautify": "^1.14.1",
-    "bson": "^6.1.0",
     "cli-highlight": "2.1.11",
     "console-table-printer": "2.11.2",
     "fs": "^0.0.1-security",

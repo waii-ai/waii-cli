@@ -2,8 +2,6 @@ import WAII from 'waii-sdk-js'
 import {ArgumentError, CmdParams} from './cmd-line-parser';
 import { js_beautify } from 'js-beautify';
 
-const colorize = require('@pinojs/json-colorizer')
-
 export interface IIndexable {
     [key: string]: any;
 }
@@ -251,8 +249,6 @@ const printPrettyConsole = (str: any) => {
 }
 
 const queryRun = async (params: CmdParams) => {
-    console.log(JSON.stringify(params));
-
     let query = "";
     if (params.vals.length < 1 || !params.vals[0]) {
         query = params.input;
