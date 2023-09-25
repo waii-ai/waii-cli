@@ -126,17 +126,132 @@ const databaseAddDoc = {
     }
 };
 const databaseAdd = async (params: CmdParams) => {
+    let parameters = {
+        config_file: undefined
+    }
+    let connect_string = params.opts['connect_string']
+    if (connect_string) {
+        // parse it to URI
+        let uri = require('uri-js');
+        let parsed = uri.parse(connect_string);
+        if (!parsed) {
+            throw new Error("Provided connect_string is not valid");
+        }
+        // check the following parameters, scheme, user, password, host, port, path, query and fragment
+        if (parsed.scheme) {
+            // check if db_type is different from scheme
+            if (params.opts['db_type'] && params.opts['db_type'] != parsed.scheme) {
+                throw new Error("db_type is different from scheme in connect_string");
+            }
+            params.opts['db_type'] = parsed.scheme;
+        }
+        if (parsed.userinfo) {
+            let userinfo_arr = parsed.userinfo.split(":");
+            if (userinfo_arr.length > 0) {
+                if (params.opts['user'] && params.opts['user'] != userinfo_arr[0]) {
+                    throw new Error("user is different from user in connect_string");
+                }
+                params.opts['user'] = userinfo_arr[0];
+            }
+            if (userinfo_arr.length > 1) {
+                if (params.opts['pass'] && params.opts['pass'] != userinfo_arr[1]) {
+                    throw new Error("pass is different from password in connect_string");
+                }
+                params.opts['pass'] = userinfo_arr[1];
+            }
+        }
+        if (parsed.host) {
+            if (params.opts['host'] && params.opts['host'] != parsed.host) {
+                throw new Error("host is different from host in connect_string");
+            }
+            params.opts['host'] = parsed.host;
+        }
+        if (parsed.port) {
+            if (params.opts['port'] && params.opts['port'] != parsed.port) {
+                throw new Error("port is different from port in connect_string");
+            }
+            params.opts['port'] = parsed.port;
+        }
+        // check database, which is first element in path
+        if (parsed.path) {
+            let path = parsed.path.split("/");
+            if (path.length > 1) {
+                if (params.opts['db'] && params.opts['db'] != path[1]) {
+                    throw new Error("db is different from database in connect_string");
+                }
+                params.opts['db'] = path[1];
+            }
+        }
+    }
+
+    let db_type = params.opts['db_type']
+    if (!db_type) {
+        db_type = 'snowflake'
+    }
+
+    if (db_type === 'mongo-migration') {
+        // get config file
+        let config_file = params.opts['config_file']
+        if (!config_file) {
+            throw new Error("config_file is required for mongo_migration");
+        }
+        // read content of the file
+        let fs = require('fs');
+        let config_content = fs.readFileSync(config_file, 'utf8');
+        if (!config_content || config_content.length == 0) {
+            throw new Error("config_file is empty");
+        }
+        // Try to parse it to json
+        try {
+            JSON.parse(config_content);
+        } catch (e) {
+            throw new Error("config_file is not valid json");
+        }
+        // if all passes, put the file content into parameters
+        parameters.config_file = config_content;
+        params.opts['path'] = config_file;
+
+        // also set file name of config_file to database name
+        let cfgFileName = config_file.split("/").pop();
+        if (!cfgFileName) {
+            cfgFileName = "config.json";
+        }
+        params.opts['db'] = cfgFileName;
+    } else if (db_type === 'snowflake') {
+        // check the following parameters
+        let account = params.opts['account']
+        let db = params.opts['db']
+        let warehouse = params.opts['warehouse']
+        let role = params.opts['role']
+        let user = params.opts['user']
+        let pass = params.opts['pass']
+        if (!account || !db || !warehouse || !role || !user || !pass) {
+            throw new Error("account, db, warehouse, role, user and pass are required for snowflake");
+        }
+    } else if (db_type === "postgresql" || db_type === "mongodb" || db_type === "mongodb+srv") {
+        // check the following parameters
+        let host = params.opts['host']
+        let db = params.opts['db']
+        if (!host || !db) {
+            throw new Error("host and db are required for " + db_type);
+        }
+    }
+
     let result = await WAII.Database.modifyConnections(
         {
             updated: [{
                 key: '',
+                db_type: db_type,
                 account_name: params.opts['account'],
                 database: params.opts['db'],
                 warehouse: params.opts['warehouse'],
                 role: params.opts['role'],
                 username: params.opts['user'],
                 password: params.opts['pass'],
-                db_type: 'snowflake',
+                path: params.opts['path'],
+                host: params.opts['host'],
+                port: Number(params.opts['port']),
+                parameters: parameters
             }]
         }
     );
