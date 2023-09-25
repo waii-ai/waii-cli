@@ -112,7 +112,7 @@ const databaseDeleteDoc = {
     }
 };
 
-const getDBConnectionKeyIfNotProvided = async (params: CmdParams) => {
+const getDBConnectionKeyIfNotProvided = async (params: CmdParams, action: string) => {
     if (params.vals.length === 0) {
         // first get all connections
         let result = await WAII.Database.getConnections();
@@ -125,7 +125,7 @@ const getDBConnectionKeyIfNotProvided = async (params: CmdParams) => {
         printConnectors(result.connectors, undefined, true);
 
         // print a msg and read from stdin
-        console.log("Please enter the index of the database connection to delete (1-N):");
+        console.log("Please enter the index of the database connection to " + action +  " (specify 1-N):");
         let stdin = process.openStdin();
         let id = await new Promise<number>((resolve, reject) => {
             stdin.addListener("data", (d) => {
@@ -152,7 +152,7 @@ const getDBConnectionKeyIfNotProvided = async (params: CmdParams) => {
 }
 
 const databaseDelete = async (params: CmdParams) => {
-    await getDBConnectionKeyIfNotProvided(params);
+    await getDBConnectionKeyIfNotProvided(params, 'delete');
 
     let result = await WAII.Database.modifyConnections({removed: [params.vals[0]]});
     switch (params.opts['format']) {
@@ -329,7 +329,7 @@ const databaseActivateDoc = {
     }
 };
 const databaseActivate = async (params: CmdParams) => {
-    await getDBConnectionKeyIfNotProvided(params);
+    await getDBConnectionKeyIfNotProvided(params, 'activate');
 
     await WAII.Database.activateConnection(params.vals[0]);
 }
