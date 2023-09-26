@@ -23,22 +23,22 @@ const help = (cmd: string = "", scmd: string = "") => {
         }
 
         console.error('');
-        console.error("Usage: waii "+cmd+" "+scmd+" <values> <flags>");
+        console.error("Usage: waii " + cmd + " " + scmd + " <values> <flags>");
         console.error('');
-        console.error("Description: "+doc['description']);
+        console.error("Description: " + doc['description']);
         console.error('');
         if (doc['parameters']) {
-            console.error("Values: "+((doc['parameters'] as string[])).join(', '));
+            console.error("Values: " + ((doc['parameters'] as string[])).join(', '));
             console.error('');
         }
         if (doc['options']) {
             console.error("Flags:");
             for (const opt in (doc['options'] as any)) {
-                console.error("   " + opt + ": "+doc['options'][opt]);
+                console.error("   " + opt + ": " + doc['options'][opt]);
             }
             console.error('');
         }
-        if (doc['stid']) console.log("Stdin: "+doc['stdin']);
+        if (doc['stid']) console.log("Stdin: " + doc['stdin']);
         console.error('');
     } else {
         console.error('Usage: waii <cmd> <subcommand> <values> <flags>');
@@ -70,7 +70,7 @@ function printCommands(commands: any, level: number = 0) {
             printCommands(commands[o], level + 1);
         } else {
             if (typeof commands[o] === 'object') {
-                console.log(" ".repeat(22-o.length-4) + (commands[o]['doc'] ? commands[o]['doc']['description'] : ''));
+                console.log(" ".repeat(22 - o.length - 4) + (commands[o]['doc'] ? commands[o]['doc']['description'] : ''));
             }
         }
     }
@@ -129,28 +129,29 @@ const main = async () => {
         let params = await parseInput(process.argv);
         if (params.cmd === 'help') {
             help(params.scmd, params.vals[0]);
-        }
-        let scmdTree = callTree[params.cmd as keyof typeof callTree];
-        if (!scmdTree) {
-            throw new ArgumentError("Unknown command " + params.cmd);
-        }
+        } else {
+            let scmdTree = callTree[params.cmd as keyof typeof callTree];
+            if (!scmdTree) {
+                throw new ArgumentError("Unknown command " + params.cmd);
+            }
 
-        let callObj = scmdTree[params.scmd as keyof typeof scmdTree];
-        if (!callObj) {
-            throw new ArgumentError("Unknown subcommand " + params.scmd);
-        }
+            let callObj = scmdTree[params.scmd as keyof typeof scmdTree];
+            if (!callObj) {
+                throw new ArgumentError("Unknown subcommand " + params.scmd);
+            }
 
-        let fn: (arg: CmdParams) => void = callObj['fn'];
-        if (!fn) {
-            throw new ArgumentError("Unknown operation.");
+            let fn: (arg: CmdParams) => void = callObj['fn'];
+            if (!fn) {
+                throw new ArgumentError("Unknown operation.");
+            }
+            await initialize();
+            await fn(params);
         }
-        await initialize();
-        await fn(params);
         process.exit(0);
     } catch (error) {
         if (error instanceof ArgumentError) {
             console.error();
-            console.error("Error: ",error.message);
+            console.error("Error: ", error.message);
             console.error();
             console.error();
             help();
@@ -160,7 +161,7 @@ const main = async () => {
             try {
                 let obj = JSON.parse(error.message);
                 msg = obj.detail;
-            } catch (err) {}
+            } catch (err) { }
             console.error("Error: ", msg);
             console.error();
             console.error();

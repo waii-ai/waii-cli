@@ -5,11 +5,11 @@ type CmdParams = {
     cmd: string,
     scmd: string,
     vals: string[],
-    opts: {[key: string]: string},
+    opts: { [key: string]: string },
     input: string
 }
 
-class ArgumentError extends Error{};
+class ArgumentError extends Error { };
 
 async function readStdin() {
     const rl = readline.createInterface({

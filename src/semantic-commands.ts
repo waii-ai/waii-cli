@@ -148,10 +148,10 @@ const contextDelete = async (params: CmdParams) => {
 }
 
 const semanticCommands = {
-    list: {fn: contextList, doc: contextListDoc},
-    add: {fn: contextAdd, doc: contextAddDoc},
-    delete: {fn: contextDelete, doc: contextDeleteDoc},
-    import: {fn: contextImport, doc: contextImportDoc}
+    list: { fn: contextList, doc: contextListDoc },
+    add: { fn: contextAdd, doc: contextAddDoc },
+    delete: { fn: contextDelete, doc: contextDeleteDoc },
+    import: { fn: contextImport, doc: contextImportDoc }
 };
 
 export { semanticCommands };

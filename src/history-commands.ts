@@ -1,8 +1,8 @@
 import WAII from 'waii-sdk-js'
-import {GeneratedQueryHistoryEntry} from 'waii-sdk-js/dist/clients/history/src/History';
-import {CmdParams} from './cmd-line-parser';
-import {Table} from "console-table-printer";
-import {printQuery} from "./query-commands";
+import { GeneratedQueryHistoryEntry } from 'waii-sdk-js/dist/clients/history/src/History';
+import { CmdParams } from './cmd-line-parser';
+import { Table } from "console-table-printer";
+import { printQuery } from "./query-commands";
 
 /**
  * "," is commonly presently in SQL & cause difficulty in parsing.
@@ -38,10 +38,12 @@ const printHistory = (history: GeneratedQueryHistoryEntry[], limit: number) => {
             entry.query.query = '';
         }
 
-        const p = new Table({columns: [
-                {name: 'property', alignment: 'left'},
-                {name: 'value', alignment: 'left', maxLen: 60, minLen: 40},
-            ], rowSeparator: true});
+        const p = new Table({
+            columns: [
+                { name: 'property', alignment: 'left' },
+                { name: 'value', alignment: 'left', maxLen: 60, minLen: 40 },
+            ], rowSeparator: true
+        });
 
         p.addRow({
             property: 'uuid',
@@ -102,7 +104,7 @@ const historyList = async (params: CmdParams) => {
 }
 
 const historyCommands = {
-    list: {fn: historyList, doc: historyListDoc}
+    list: { fn: historyList, doc: historyListDoc }
 };
 
 export { historyCommands };

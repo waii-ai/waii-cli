@@ -1,5 +1,5 @@
 import WAII from 'waii-sdk-js'
-import {ArgumentError, CmdParams} from './cmd-line-parser';
+import { ArgumentError, CmdParams } from './cmd-line-parser';
 import { js_beautify } from 'js-beautify';
 
 export interface IIndexable {
@@ -11,7 +11,7 @@ const printQuery = (query: string | undefined) => {
         return;
     }
     const highlight = require('cli-highlight').highlight
-    console.log(highlight(query, {language: 'sql', ignoreIllegals: true}))
+    console.log(highlight(query, { language: 'sql', ignoreIllegals: true }))
 }
 
 const queryCreateDoc = {
@@ -32,7 +32,7 @@ const queryCreate = async (params: CmdParams) => {
         ask = params.input;
     }
 
-    let result = await WAII.Query.generate({ask: ask, dialect: dialect});
+    let result = await WAII.Query.generate({ ask: ask, dialect: dialect });
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -63,12 +63,12 @@ const queryUpdate = async (params: CmdParams) => {
         throw new ArgumentError("No query specified.");
     }
 
-    let descResult = await WAII.Query.describe({query: query});
+    let descResult = await WAII.Query.describe({ query: query });
     let genResult = await WAII.Query.generate({
         ask: params.vals[0],
         dialect: dialect,
-        tweak_history: [{ask: descResult.summary, sql: query}],
-        search_context: [{schema_name: schema}]
+        tweak_history: [{ ask: descResult.summary, sql: query }],
+        search_context: [{ schema_name: schema }]
     });
     switch (params.opts['format']) {
         case 'json': {
@@ -113,7 +113,7 @@ const queryExplainDoc = {
 };
 const queryExplain = async (params: CmdParams) => {
     let query = params.input;
-    let result = await WAII.Query.describe({query: query});
+    let result = await WAII.Query.describe({ query: query });
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -162,7 +162,7 @@ const queryDiff = async (params: CmdParams) => {
         throw new ArgumentError("Could not find second query.");
     }
 
-    let result = await WAII.Query.diff({query: query, previous_query: prev_query});
+    let result = await WAII.Query.diff({ query: query, previous_query: prev_query });
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -211,9 +211,9 @@ const queryTranscode = async (params: CmdParams) => {
     await queryUpdate(params);
 }
 
-import {Table} from 'console-table-printer';
-import {TableName} from "waii-sdk-js/dist/clients/database/src/Database";
-import {highlight} from "cli-highlight";
+import { Table } from 'console-table-printer';
+import { TableName } from "waii-sdk-js/dist/clients/database/src/Database";
+import { highlight } from "cli-highlight";
 
 const queryRunDoc = {
     description: "Execute the query and return the results",
@@ -231,7 +231,7 @@ const printPrettyConsole = (str: any) => {
         space_in_empty_paren: true
     });
 
-    console.log(highlight(beautifulJavaScript, {language: 'javascript', ignoreIllegals: true}))
+    console.log(highlight(beautifulJavaScript, { language: 'javascript', ignoreIllegals: true }))
 }
 
 const queryRun = async (params: CmdParams) => {
@@ -247,7 +247,7 @@ const queryRun = async (params: CmdParams) => {
     }
 
     const connection = await WAII.Database.getConnections();
-    let result = await WAII.Query.run({query: query});
+    let result = await WAII.Query.run({ query: query });
     switch (params.opts['format']) {
         case 'json': {
             printPrettyConsole(result);
@@ -263,11 +263,11 @@ const queryRun = async (params: CmdParams) => {
                 } else {
                     // Define the columns based on the result's column definitions
                     const columns = result.column_definitions.map((c) => {
-                        return {name: c.name, alignment: 'left'}; // you can customize alignment here
+                        return { name: c.name, alignment: 'left' }; // you can customize alignment here
                     });
 
                     // Create a new Table with the columns
-                    const p = new Table({columns});
+                    const p = new Table({ columns });
 
                     // Iterate through the rows and add them to the table
                     for (const row of result.rows) {
@@ -288,14 +288,14 @@ const queryRun = async (params: CmdParams) => {
 
 
 const queryCommands = {
-    create: {fn: queryCreate, doc: queryCreateDoc},
-    update: {fn: queryUpdate, doc: queryUpdateDoc},
-    explain: {fn: queryExplain, doc: queryExplainDoc},
-    describe: {fn: queryExplain, doc: queryDiffDoc},
-    rewrite: {fn: queryRewrite, doc: queryRewriteDoc},
-    transcode: {fn: queryTranscode, doc: queryTranscodeDoc},
-    diff: {fn: queryDiff, doc: queryDiffDoc},
-    run: {fn: queryRun, doc: queryRunDoc}
+    create: { fn: queryCreate, doc: queryCreateDoc },
+    update: { fn: queryUpdate, doc: queryUpdateDoc },
+    explain: { fn: queryExplain, doc: queryExplainDoc },
+    describe: { fn: queryExplain, doc: queryDiffDoc },
+    rewrite: { fn: queryRewrite, doc: queryRewriteDoc },
+    transcode: { fn: queryTranscode, doc: queryTranscodeDoc },
+    diff: { fn: queryDiff, doc: queryDiffDoc },
+    run: { fn: queryRun, doc: queryRunDoc }
 };
 
-export {queryCommands, printQuery}
+export { queryCommands, printQuery }

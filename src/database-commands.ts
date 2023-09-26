@@ -1,42 +1,70 @@
 import WAII from 'waii-sdk-js'
-import {Schema, SchemaDescription} from 'waii-sdk-js/dist/clients/database/src/Database';
-import {DBConnection, DBConnectionIndexingStatus, SchemaIndexingStatus} from "waii-sdk-js/dist/clients/database/src/Database";
-import {ArgumentError, CmdParams} from './cmd-line-parser';
-import {Table} from 'console-table-printer';
+import { Schema, SchemaDescription } from 'waii-sdk-js/dist/clients/database/src/Database';
+import { DBConnection, DBConnectionIndexingStatus, SchemaIndexingStatus } from "waii-sdk-js/dist/clients/database/src/Database";
+import { ArgumentError, CmdParams } from './cmd-line-parser';
+import { Table } from 'console-table-printer';
+
+const printConnectionSelector = (connectors?: DBConnection[]) => {
+    let defaultScope = WAII.Database.getDefaultConnection();
+
+    if (connectors) {
+        for (let i = 0; i < connectors.length; ++i) {
+            let connection = connectors[i];
+
+            const connectionToPrint = "[ " + (i + 1) + " ] " + connection.key
+
+            // for default connection, print in green color
+            if (connection.key == defaultScope) {
+                console.log("\x1b[32m%s\x1b[0m", connectionToPrint + " [Active]");
+            } else {
+                console.log(connectionToPrint);
+            }
+        }
+    }
+}
 
 const printConnectors = (connectors?: DBConnection[], status?: {
     [key: string]: DBConnectionIndexingStatus;
-}, keyWithIndexOnly?: boolean) => {
-    // Define the columns for the table, excluding the 'key' column
-    const columns = [
-        {name: 'account', title: 'account_name', alignment: 'left'},
-        {name: 'database', title: 'database', alignment: 'left'},
-        {name: 'warehouse', title: 'warehouse', alignment: 'left'},
-        {name: 'role', title: 'role', alignment: 'left'},
-        {name: 'user', title: 'username', alignment: 'left'}
-    ];
+}) => {
 
-    let default_scope = WAII.Database.getDefaultConnection();
+    let defaultScope = WAII.Database.getDefaultConnection();
+
+    console.log();
 
     // If connectors are provided, iterate through them and create a table for each one
     if (connectors) {
-        for (let i = 0; i < connectors.length; i++) {
-            const connection = connectors[i];
-            const default_conn_now = (connection.key == default_scope);
+        for (const connection of connectors) {
 
-            if (keyWithIndexOnly) {
-                const connectionToPrint = "[ " + (i+1) + " ] " + connection.key
+            let columns = [];
+            let row: { [a: string]: string } = {}
 
-                // for default connection, print in green color
-                if (default_conn_now) {
-                    console.log("\x1b[32m%s\x1b[0m", connectionToPrint + " [Active]");
-                } else {
-                    console.log(connectionToPrint);
-                }
-                continue
+            if (connection.account_name) {
+                columns.push({ name: 'account', title: 'account_name', alignment: 'left' });
+                row['account'] = connection.account_name;
             }
 
-            const p = new Table({columns});
+            if (connection.database) {
+                columns.push({ name: 'database', title: 'database', alignment: 'left' });
+                row['database'] = connection.database;
+            }
+
+            if (connection.warehouse) {
+                columns.push({ name: 'warehouse', title: 'warehouse', alignment: 'left' });
+                row['warehouse'] = connection.warehouse;
+            }
+
+            if (connection.role) {
+                columns.push({ name: 'role', title: 'role', alignment: 'left' });
+                row['role'] = connection.role;
+            }
+
+            if (connection.username) {
+                columns.push({ name: 'user', title: 'username', alignment: 'left' });
+                row['user'] = connection.username;
+            }
+
+            let p = new Table({ columns });
+            p.addRow(row);
 
             let percentage = 1;
             if (status) {
@@ -46,31 +74,23 @@ const printConnectors = (connectors?: DBConnection[], status?: {
                 for (const schema in db_status.schema_status) {
                     let schema_status = db_status.schema_status[schema];
                     total += schema_status.n_total_tables;
-                    pending += schema_status.n_pending_indexing_tables; 
+                    pending += schema_status.n_pending_indexing_tables;
                 }
                 percentage = (total > 0) ? (total - pending) / total : 1;
             }
 
-            // Add the current connection to the table
-            p.addRow({
-                account: connection.account_name,
-                database: connection.database,
-                warehouse: connection.warehouse,
-                role: connection.role,
-                user: connection.username
-            });
-
-            if (default_conn_now) {
+            if (connection.key == defaultScope) {
                 console.log("\x1b[32m%s\x1b[0m", "Key: " + connection.key + " [Active]");
             }
             else {
                 console.log("Key: " + connection.key);
             }
+
             if (status) {
                 let status_string = status[connection.key].status;
                 console.log("Indexing status: " + status_string);
                 if (status_string === "indexing") {
-                    console.log("Percent complete: "+`${Math.round(percentage * 100 * 100) / 100}%`);
+                    console.log("Percent complete: " + `${Math.round(percentage * 100 * 100) / 100}%`);
                 }
             }
 
@@ -122,10 +142,10 @@ const getDBConnectionKeyIfNotProvided = async (params: CmdParams, action: string
         }
 
         // print all connections
-        printConnectors(result.connectors, undefined, true);
+        printConnectionSelector(result.connectors);
 
         // print a msg and read from stdin
-        console.log("Please enter the index of the database connection to " + action +  " (specify 1-N):");
+        console.log("Please enter the index of the database connection to " + action + " (specify 1-N):");
         let stdin = process.openStdin();
         let id = await new Promise<number>((resolve, reject) => {
             stdin.addListener("data", (d) => {
@@ -154,7 +174,7 @@ const getDBConnectionKeyIfNotProvided = async (params: CmdParams, action: string
 const databaseDelete = async (params: CmdParams) => {
     await getDBConnectionKeyIfNotProvided(params, 'delete');
 
-    let result = await WAII.Database.modifyConnections({removed: [params.vals[0]]});
+    let result = await WAII.Database.modifyConnections({ removed: [params.vals[0]] });
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -371,12 +391,12 @@ const databaseDescribe = async (params: CmdParams) => {
             // print table of database
             const p_table = new Table({
                 columns: [
-                    {name: 'database', title: 'database', alignment: 'left'},
+                    { name: 'database', title: 'database', alignment: 'left' },
                 ]
             });
             p_table.addRow({
-                    database: result.catalogs[0].schemas[0].name.database_name,
-                }
+                database: result.catalogs[0].schemas[0].name.database_name,
+            }
             );
             p_table.printTable();
 
@@ -384,8 +404,8 @@ const databaseDescribe = async (params: CmdParams) => {
 
             const p = new Table({
                 columns: [
-                    {name: 'schema', title: 'schema', alignment: 'left'},
-                    {name: 'tables', title: 'tables', alignment: 'left'},
+                    { name: 'schema', title: 'schema', alignment: 'left' },
+                    { name: 'tables', title: 'tables', alignment: 'left' },
                 ]
             });
             for (const schema of result.catalogs[0].schemas) {
@@ -418,13 +438,14 @@ const schemaList = async (params: CmdParams) => {
     }
     switch (params.opts['format']) {
         case 'json': {
-            console.log("JSON format not yet implemented.");
+            console.log(JSON.stringify(result.catalogs[0].schemas, null , 2));
+            break;
         }
         default: {
             const p = new Table({
                 columns: [
-                    {name: 'schema', title: 'schema', alignment: 'left'},
-                    {name: 'tables', title: 'tables', alignment: 'left'},
+                    { name: 'schema', title: 'schema', alignment: 'left' },
+                    { name: 'tables', title: 'tables', alignment: 'left' },
                 ]
             });
             for (const schema of result.catalogs[0].schemas) {
@@ -450,7 +471,7 @@ const schemaDescribeDoc = {
 const schemaDescribe = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
     let schema = null;
-    
+
     if (!result.catalogs || result.catalogs.length === 0) {
         throw new Error("No databases configured.");
     }
@@ -496,7 +517,7 @@ const schemaDescribe = async (params: CmdParams) => {
             if (schema.tables) {
                 const p = new Table({
                     columns: [
-                        {name: 'table', title: 'table', alignment: 'left'},
+                        { name: 'table', title: 'table', alignment: 'left' },
                     ]
                 });
                 for (const table of schema.tables) {
@@ -561,7 +582,8 @@ const tableList = async (params: CmdParams) => {
 
     switch (params.opts['format']) {
         case 'json': {
-            console.log("JSON format not yet implemented.");
+            console.log(JSON.stringify(result.catalogs[0].schemas, null, 2));
+            break;
         }
         default: {
             for (const schema of result.catalogs[0].schemas) {
@@ -572,7 +594,7 @@ const tableList = async (params: CmdParams) => {
                 let t_s = formatStrings(tables)
                 const p_s = new Table({
                     columns: [
-                        {name: 'table', title: schema.name.schema_name, alignment: 'left'},
+                        { name: 'table', title: schema.name.schema_name, alignment: 'left' },
                     ],
                 })
                 // split t_s by '\n', and add row
@@ -636,8 +658,8 @@ const tableDescribe = async (params: CmdParams) => {
     }
 
     if (tables.length > 1) {
-        throw new Error("Too many tables found. Please specify the schema_name too. Tables=[" 
-                                + tables.map((t) => t.name.schema_name + "." + t.name.table_name).join(", ") + "]");
+        throw new Error("Too many tables found. Please specify the schema_name too. Tables=["
+            + tables.map((t) => t.name.schema_name + "." + t.name.table_name).join(", ") + "]");
     }
 
     if (tables.length == 0) {
@@ -657,8 +679,8 @@ const tableDescribe = async (params: CmdParams) => {
                 console.log("\nColumns:\n--------")
                 const p = new Table({
                     columns: [
-                        {name: 'column', title: 'column', alignment: 'left'},
-                        {name: 'type', title: 'type', alignment: 'left'},
+                        { name: 'column', title: 'column', alignment: 'left' },
+                        { name: 'type', title: 'type', alignment: 'left' },
                     ]
                 });
                 for (const column of (table.columns ? table.columns : [])) {
@@ -762,7 +784,7 @@ const getSchemaName = (name: string): string => {
     return name.split('.')[1];
 }
 
-const findSchema = async (name: string):Promise<Schema> => {
+const findSchema = async (name: string): Promise<Schema> => {
 
     let result = await WAII.Database.getCatalogs();
     if (!result.catalogs || result.catalogs.length === 0) {
@@ -801,13 +823,13 @@ const schemaUpdateQuestions = async (params: CmdParams) => {
     if (questions.length < 3) {
         questions = params.input.split("\n");
         if (questions.length < 3) {
-            throw new ArgumentError("Need 3 questions.");            
+            throw new ArgumentError("Need 3 questions.");
         }
     }
-    questions = questions.slice(0,3);
+    questions = questions.slice(0, 3);
 
-    let schema : Schema = await findSchema(schema_name);
-    
+    let schema: Schema = await findSchema(schema_name);
+
     let description = schema.description;
     if (!description) {
         description = {};
@@ -835,7 +857,7 @@ const schemaUpdateSummary = async (params: CmdParams) => {
     let name = params.vals[0];
     let database_name = getDBName(name);
     let schema_name = getSchemaName(name);
-    
+
     let summary = params.vals[1];
 
     if (!summary) {
@@ -845,8 +867,8 @@ const schemaUpdateSummary = async (params: CmdParams) => {
         }
     }
 
-    let schema : Schema = await findSchema(schema_name);
-    
+    let schema: Schema = await findSchema(schema_name);
+
     let description = schema.description;
     if (!description) {
         description = {};
@@ -864,25 +886,25 @@ const schemaUpdateSummary = async (params: CmdParams) => {
 }
 
 const databaseCommands = {
-    list: {fn: databaseList, doc: databaseListDoc},
-    add: {fn: databaseAdd, doc: databaseAddDoc},
-    delete: {fn: databaseDelete, doc: databaseDeleteDoc},
-    activate: {fn: databaseActivate, doc: databaseActivateDoc},
-    describe: {fn: databaseDescribe, doc: databaseDescribeDoc}
+    list: { fn: databaseList, doc: databaseListDoc },
+    add: { fn: databaseAdd, doc: databaseAddDoc },
+    delete: { fn: databaseDelete, doc: databaseDeleteDoc },
+    activate: { fn: databaseActivate, doc: databaseActivateDoc },
+    describe: { fn: databaseDescribe, doc: databaseDescribeDoc }
 };
 
 const schemaCommands = {
-    describe: {fn: schemaDescribe, doc: schemaDescribeDoc},
-    list: {fn: schemaList, doc: schemaListDoc},
-    update: {fn: schemaUpdateDescription, doc: schemaUpdateDescriptionDoc},
-    update_questions: {fn: schemaUpdateQuestions, doc: schemaUpdateQuestionDoc},
-    update_summary: {fn: schemaUpdateSummary, doc: schemaUpdateSummaryDoc}
+    describe: { fn: schemaDescribe, doc: schemaDescribeDoc },
+    list: { fn: schemaList, doc: schemaListDoc },
+    update: { fn: schemaUpdateDescription, doc: schemaUpdateDescriptionDoc },
+    update_questions: { fn: schemaUpdateQuestions, doc: schemaUpdateQuestionDoc },
+    update_summary: { fn: schemaUpdateSummary, doc: schemaUpdateSummaryDoc }
 };
 
 const tableCommands = {
-    describe: {fn: tableDescribe, doc: tableDescribeDoc},
-    list: {fn: tableList, doc: tableListDoc},
-    update: {fn: updateTableDescription, doc: updateTableDescriptionDoc}
+    describe: { fn: tableDescribe, doc: tableDescribeDoc },
+    list: { fn: tableList, doc: tableListDoc },
+    update: { fn: updateTableDescription, doc: updateTableDescriptionDoc }
 }
 
-export {databaseCommands, schemaCommands, tableCommands};
+export { databaseCommands, schemaCommands, tableCommands };
