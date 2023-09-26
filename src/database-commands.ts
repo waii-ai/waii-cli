@@ -332,6 +332,20 @@ const databaseActivate = async (params: CmdParams) => {
     await getDBConnectionKeyIfNotProvided(params, 'activate');
 
     await WAII.Database.activateConnection(params.vals[0]);
+
+    // use databaseList to check if the connection is activated
+    let waitTime = 30;
+    while (waitTime > 0) {
+        let result = await WAII.Database.getConnections();
+        if (result.default_db_connection_key === params.vals[0]) {
+            // output in green color
+            console.log("\x1b[32m%s\x1b[0m", "Database connection activated.");
+            return
+        }
+        waitTime--;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    throw new Error("Failed to activate database connection after " + waitTime + " seconds.");
 }
 
 const databaseDescribeDoc = {

@@ -14,10 +14,6 @@ const printQuery = (query: string | undefined) => {
     console.log(highlight(query, {language: 'sql', ignoreIllegals: true}))
 }
 
-const ISODate = (str: any) => {
-    return str;
-}
-
 const queryCreateDoc = {
     description: "Generate a query from text. Pass a question or instructions and receive the query in response.",
     parameters: ["ask - a question or set of instructions to generate the query."],
@@ -27,17 +23,7 @@ const queryCreateDoc = {
         dialect: "choose the database backend: snowflake or postgres"
     }
 };
-const isStringJSON = (text: any) => {
-    if (typeof text !== "string") {
-        return false;
-    }
-    try {
-        JSON.parse(text);
-        return true;
-    } catch (error) {
-        return false;
-    }
-}
+
 const queryCreate = async (params: CmdParams) => {
     let dialect = params.opts['dialect']
     let ask = params.vals[0];
