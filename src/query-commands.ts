@@ -1,6 +1,9 @@
 import WAII from 'waii-sdk-js'
 import { ArgumentError, CmdParams } from './cmd-line-parser';
 import { js_beautify } from 'js-beautify';
+import { Table } from 'console-table-printer';
+import { TableName, SchemaName } from "waii-sdk-js/dist/clients/database/src/Database";
+import { highlight } from "cli-highlight";
 
 export interface IIndexable {
     [key: string]: any;
@@ -211,19 +214,6 @@ const queryTranscode = async (params: CmdParams) => {
     await queryUpdate(params);
 }
 
-import { Table } from 'console-table-printer';
-import { TableName } from "waii-sdk-js/dist/clients/database/src/Database";
-import { highlight } from "cli-highlight";
-
-const queryRunDoc = {
-    description: "Execute the query and return the results",
-    parameters: ["query - you can specify the query to run as a parameter."],
-    stdin: "If no parameters are specified, the query to run will be read from stdin.",
-    options: {
-        format: "choose the format of the response: text or json",
-    }
-};
-
 const printPrettyConsole = (str: any) => {
 
     const beautifulJavaScript = js_beautify(str, {
@@ -234,6 +224,15 @@ const printPrettyConsole = (str: any) => {
     console.log(highlight(beautifulJavaScript, { language: 'javascript', ignoreIllegals: true }))
 }
 
+const queryRunDoc = {
+    description: "Execute the query and return the results",
+    parameters: ["query - you can specify the query to run as a parameter."],
+    stdin: "If no parameters are specified, the query to run will be read from stdin.",
+    options: {
+        format: "choose the format of the response: text or json",
+        schema: "use the schema given as the schema for the query. format: <db>.<schema>"
+    }
+};
 const queryRun = async (params: CmdParams) => {
     let query = "";
     if (params.vals.length < 1 || !params.vals[0]) {
@@ -246,8 +245,21 @@ const queryRun = async (params: CmdParams) => {
         throw new ArgumentError("No query specified.");
     }
 
+    let schema: SchemaName | null = null;
+    let name = params.opts['schema'];
+    if (name) {
+        let parts = name.split('.');
+        if (parts.length !== 2) {
+            throw new ArgumentError("Schema name must be <db>.<schema>");
+        }
+        schema = {
+            schema_name: parts[1],
+            database_name: parts[0]
+        };
+    }
+
     const connection = await WAII.Database.getConnections();
-    let result = await WAII.Query.run({ query: query });
+    let result = await WAII.Query.run({ query: query, ...(schema && {current_schema: schema})});
     switch (params.opts['format']) {
         case 'json': {
             printPrettyConsole(result);
@@ -257,8 +269,7 @@ const queryRun = async (params: CmdParams) => {
             if (result.column_definitions && result.rows) {
                 if (connection.default_db_connection_key?.includes('mongodb://') ||
                     connection.default_db_connection_key?.includes('mongodb+srv://')) {
-                    // @ts-ignore
-                    printPrettyConsole(result.rows[0]['DOC']);
+                    printPrettyConsole((result.rows[0] as { [key: string]: any })['DOC']);
                     return;
                 } else {
                     // Define the columns based on the result's column definitions
