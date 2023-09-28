@@ -233,6 +233,21 @@ const queryRunDoc = {
         schema: "use the schema given as the schema for the query. format: <db>.<schema>"
     }
 };
+const sanitiseData = (rowName: string, columnValue: any) => {
+  let d;
+  if (rowName.toUpperCase().startsWith('DATE')) {
+    d = new Date((new Date()).getTimezoneOffset() * 60000);
+    d.setUTCSeconds(columnValue / 1000);
+    return d.toDateString();
+  } else if (rowName.startsWith('times')) {
+    d = new Date(0);
+    d.setUTCSeconds(columnValue / 1000);
+    return d.toLocaleString();
+  } else {
+    return String(columnValue);
+  }
+
+}
 const queryRun = async (params: CmdParams) => {
     let query = "";
     if (params.vals.length < 1 || !params.vals[0]) {
@@ -284,7 +299,11 @@ const queryRun = async (params: CmdParams) => {
                     for (const row of result.rows) {
                         const rowObj: { [key: string]: any } = {};
                         for (const column of result.column_definitions) {
-                            rowObj[column.name] = (row as IIndexable)[column.name];
+                          for(const row of result.rows) {
+                            // @ts-ignore
+                            const value = row[column.name];
+                            rowObj[column.name] = sanitiseData(column.type, value)
+                          }
                         }
                         p.addRow(rowObj);
                     }
