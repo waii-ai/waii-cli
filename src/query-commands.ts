@@ -215,13 +215,15 @@ const queryTranscode = async (params: CmdParams) => {
 }
 
 const printPrettyConsole = (str: any) => {
-
-    const beautifulJavaScript = js_beautify(str, {
-        indent_size: 2,      // Number of spaces for indentation
-        space_in_empty_paren: true
-    });
-
-    console.log(highlight(beautifulJavaScript, { language: 'javascript', ignoreIllegals: true }))
+    try {
+        const beautifulJavaScript = js_beautify(str, {
+            indent_size: 2,      // Number of spaces for indentation
+            space_in_empty_paren: true
+        });
+        console.log(highlight(beautifulJavaScript, { language: 'javascript', ignoreIllegals: true }))
+    } catch (e) {
+        console.log(str)
+    }
 }
 
 const queryRunDoc = {
