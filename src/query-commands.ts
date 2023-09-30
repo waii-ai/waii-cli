@@ -301,11 +301,9 @@ const queryRun = async (params: CmdParams) => {
                     for (const row of result.rows) {
                         const rowObj: { [key: string]: any } = {};
                         for (const column of result.column_definitions) {
-                          for(const row of result.rows) {
                             // @ts-ignore
                             const value = row[column.name];
                             rowObj[column.name] = sanitiseData(column.type, value)
-                          }
                         }
                         p.addRow(rowObj);
                     }
