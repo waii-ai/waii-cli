@@ -14,14 +14,12 @@ Waii-CLI is a powerful command-line interface (CLI) tool that generates SQL from
    - If you don't have Node.js installed, you can download it from [Node.js official website](https://nodejs.org/).
 
 2. Install Waii-CLI globally using npm:
-
 ```bash
 npm install -g waii-cli
 ```
+
 3. Set your API key.
-
 Login to https://tweakit.waii.ai/, you need to get username/password to access it first. Go to Settings -> Copy API Key to get your API key.
-
 Create ~/.waii/yaml.conf on your local laptop and add your api key.
 ```yaml
 url: https://tweakit.waii.ai/api/
