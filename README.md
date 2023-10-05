@@ -21,7 +21,6 @@ npm install -g waii-cli
 3. Set your API key.
 
 Login to https://tweakit.waii.ai/, you need to get username/password to access it first. Go to Settings -> Copy API Key to get your API key.
-<img width="223" alt="image" src="https://github.com/waii-ai/waii-cli/assets/20328673/922ecb39-aac4-4a24-8642-2074eaa6061b">
 
 Create ~/.waii/yaml.conf on your local laptop and add your api key.
 ```yaml
