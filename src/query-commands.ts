@@ -344,9 +344,7 @@ const queryAnalyze = async (params: CmdParams) => {
     let queryId = params.opts['query_id'];
     let printSummary = 'summary' in params.opts;
     let printRecommendation = 'recommendation' in params.opts;
-
-    console.log(printSummary, printRecommendation);
-
+    
     if (!query && !queryId) {
         throw new ArgumentError("No query or query_id specified.");
     }
