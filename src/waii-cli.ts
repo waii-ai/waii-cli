@@ -10,6 +10,7 @@ import { databaseCommands, schemaCommands, tableCommands } from "./database-comm
 import { queryCommands } from "./query-commands";
 import { semanticCommands } from "./semantic-commands";
 import { historyCommands } from './history-commands';
+//const log = require('why-is-node-running');
 
 const CONF_FILE = '~/.waii/conf.yaml';
 const DEFAULT_API_KEY_IN_TEMPLATE = '<your_waii_api_key_here>'
@@ -173,3 +174,8 @@ const main = async () => {
 };
 
 main();
+
+/*let timer = setTimeout(function () {
+    clearTimeout(timer);
+    log() // logs out active handles that are keeping node running
+  }, 10000);*/

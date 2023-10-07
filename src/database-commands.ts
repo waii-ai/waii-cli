@@ -147,8 +147,9 @@ const getDBConnectionKeyIfNotProvided = async (params: CmdParams, action: string
         // print a msg and read from stdin
         console.log("Please enter the index of the database connection to " + action + " (specify 1-N):");
         let stdin = process.openStdin();
+        let listener;
         let id = await new Promise<number>((resolve, reject) => {
-            stdin.addListener("data", (d) => {
+            listener = (d: any) => {
                 let input = d.toString().trim();
                 if (input === "q") {
                     reject("User canceled");
@@ -158,10 +159,12 @@ const getDBConnectionKeyIfNotProvided = async (params: CmdParams, action: string
                     console.log("Please enter a number:");
                 } else {
                     resolve(num);
-                }
-            });
-        })
-
+                };
+            };
+            stdin.addListener("data", listener);
+        });
+        stdin.removeAllListeners();
+        process.stdin.destroy();
         // check if the number within the range
         if (id < 1 || id > result.connectors.length) {
             throw new Error("Index out of range");
