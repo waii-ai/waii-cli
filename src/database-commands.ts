@@ -363,7 +363,9 @@ const databaseActivate = async (params: CmdParams) => {
             return
         }
         waitTime--;
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        let timer;
+        await new Promise(resolve => {timer = setTimeout(resolve, 1000)});
+        clearTimeout(timer);
     }
     throw new Error("Failed to activate database connection after " + waitTime + " seconds.");
 }
@@ -753,8 +755,7 @@ const schemaUpdateDescription = async (params: CmdParams) => {
     }
 
     if (!database_name || !schema_name) {
-        console.error("Incorrect name, need <db name>.<schema name>");
-        process.exit(-1);
+        throw new ArgumentError("Incorrect name, need <db name>.<schema name>");
     }
 
     await WAII.Database.updateSchemaDescription({
