@@ -369,13 +369,32 @@ const queryAnalyze = async (params: CmdParams) => {
         }
         default: {
             if (printSummary || !printRecommendation) {
-                for (const msg in result.summary) {
+                if (!printSummary) {
+                    console.log();
+                    console.log('Summary:');
+                    console.log('---');
+                    console.log(); 
+                }
+                for (const msg of result.summary) {
                     console.log(msg);
                     console.log();
                 }
-            } else {
-                for (const msg in result.recommendations) {
+                if (!printSummary) {
+                    console.log();
+                }
+            } 
+            
+            if (printRecommendation || !printSummary) {
+                if (!printRecommendation) {
+                    console.log('Recommendations:');
+                    console.log('---');
+                    console.log();    
+                }
+                for (const msg of result.recommendations) {
                     console.log(msg);
+                    console.log();
+                }
+                if (!printRecommendation) {
                     console.log();
                 }
             }

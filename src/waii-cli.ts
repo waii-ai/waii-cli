@@ -147,7 +147,7 @@ const main = async () => {
             await initialize();
             await fn(params);
         }
-        process.exit(0);
+        process.exitCode = 0;
     } catch (error) {
         if (error instanceof ArgumentError) {
             console.error();
@@ -168,10 +168,8 @@ const main = async () => {
         } else {
             console.log(error);
         }
-        process.exit(-1);
-    } finally {
-        process.exit(0);
+        process.exitCode = -1;
     }
-}
+};
 
 main();
