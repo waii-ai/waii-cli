@@ -346,7 +346,7 @@ const queryAnalyze = async (params: CmdParams) => {
     let printSummary = 'summary' in params.opts;
     let printRecommendation = 'recommendation' in params.opts;
     let printQueryText = 'query_text' in params.opts;
-    let printAll = !(printSummary || printRecommendation || printQuery);
+    let printAll = !(printSummary || printRecommendation || printQueryText);
     
     if (!query && !queryId) {
         throw new ArgumentError("No query or query_id specified.");
@@ -384,7 +384,7 @@ const queryAnalyze = async (params: CmdParams) => {
                 }
             }
 
-            if (printSummary || !printRecommendation) {
+            if (printSummary || printAll) {
                 if (!printSummary) {
                     console.log();
                     console.log('Summary:');
@@ -400,7 +400,7 @@ const queryAnalyze = async (params: CmdParams) => {
                 }
             } 
             
-            if (printRecommendation || !printSummary) {
+            if (printRecommendation || printAll) {
                 if (!printRecommendation) {
                     console.log('Recommendations:');
                     console.log('---');
