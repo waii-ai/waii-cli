@@ -327,7 +327,6 @@ const queryAnalyzeDoc = {
         query_id: "You can specify a query that ran already and get performance insights.",
         summary: "Print the performance analysis summary.",
         recommendations: "Print recommendations on how to improve the query."
-
     }
 };
 const queryAnalyze = async (params: CmdParams) => {
@@ -345,6 +344,8 @@ const queryAnalyze = async (params: CmdParams) => {
     let queryId = params.opts['query_id'];
     let printSummary = 'summary' in params.opts;
     let printRecommendation = 'recommendation' in params.opts;
+
+    console.log(printSummary, printRecommendation);
 
     if (!query && !queryId) {
         throw new ArgumentError("No query or query_id specified.");
@@ -368,6 +369,11 @@ const queryAnalyze = async (params: CmdParams) => {
             break;
         }
         default: {
+            console.log('Query:');
+            console.log('---');
+            printQuery(result.query_text)
+            console.log();
+
             if (printSummary || !printRecommendation) {
                 if (!printSummary) {
                     console.log();
