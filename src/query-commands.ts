@@ -226,6 +226,22 @@ const printPrettyConsole = (str: any) => {
     }
 }
 
+const sanitizeData = (rowName: string, columnValue: any) => {
+    let d;
+    if (rowName.toUpperCase().startsWith('DATE')) {
+      d = new Date((new Date()).getTimezoneOffset() * 60000);
+      d.setUTCSeconds(columnValue / 1000);
+      return d.toDateString();
+    } else if (rowName.startsWith('times')) {
+      d = new Date(0);
+      d.setUTCSeconds(columnValue / 1000);
+      return d.toLocaleString();
+    } else {
+      return String(columnValue);
+    }
+  
+}
+
 const queryRunDoc = {
     description: "Execute the query and return the results",
     parameters: ["query - you can specify the query to run as a parameter."],
@@ -235,21 +251,6 @@ const queryRunDoc = {
         schema: "use the schema given as the schema for the query. format: <db>.<schema>"
     }
 };
-const sanitiseData = (rowName: string, columnValue: any) => {
-  let d;
-  if (rowName.toUpperCase().startsWith('DATE')) {
-    d = new Date((new Date()).getTimezoneOffset() * 60000);
-    d.setUTCSeconds(columnValue / 1000);
-    return d.toDateString();
-  } else if (rowName.startsWith('times')) {
-    d = new Date(0);
-    d.setUTCSeconds(columnValue / 1000);
-    return d.toLocaleString();
-  } else {
-    return String(columnValue);
-  }
-
-}
 const queryRun = async (params: CmdParams) => {
     let query = "";
     if (params.vals.length < 1 || !params.vals[0]) {
@@ -303,7 +304,7 @@ const queryRun = async (params: CmdParams) => {
                         for (const column of result.column_definitions) {
                             // @ts-ignore
                             const value = row[column.name];
-                            rowObj[column.name] = sanitiseData(column.type, value)
+                            rowObj[column.name] = sanitizeData(column.type, value)
                         }
                         p.addRow(rowObj);
                     }
@@ -316,6 +317,72 @@ const queryRun = async (params: CmdParams) => {
     }
 }
 
+const queryAnalyzeDoc = {
+    description: "Analyze query performance.",
+    parameters: ["query - you can specify the query to run and analyze as a parameter."],
+    stdin: "If no parameters are specified, the query to be analyzed will be read from stdin.",
+    options: {
+        format: "choose the format of the response: text or json",
+        query: "You can specify the query to run and analyze as an option as well",
+        query_id: "You can specify a query that ran already and get performance insights.",
+        summary: "Print the performance analysis summary.",
+        recommendations: "Print recommendations on how to improve the query."
+
+    }
+};
+const queryAnalyze = async (params: CmdParams) => {
+    let query = "";
+    if (params.vals.length < 1 || !params.vals[0]) {
+        query = params.input;
+    } else {
+        query = params.vals[0];
+    }
+
+    if (params.opts['query']) {
+        query = params.opts['query'];
+    }
+
+    let queryId = params.opts['query_id'];
+    let printSummary = 'summary' in params.opts;
+    let printRecommendation = 'recommendation' in params.opts;
+
+    if (!query && !queryId) {
+        throw new ArgumentError("No query or query_id specified.");
+    }
+
+    if (!queryId) {
+        let result = await WAII.Query.submit({query: query});
+        if (!result.query_id) {
+            throw new ArgumentError("Unable to retrieve query id from running query.");
+        }
+        queryId = result.query_id;
+        // don't need the result but need to wait for the query to finish.
+        WAII.Query.getResults({query_id: queryId});
+    }
+
+    let result = await WAII.Query.analyzePerformance({query_id: queryId});
+
+    switch (params.opts['format']) {
+        case 'json': {
+            console.log(JSON.stringify(result, null, 2));
+            break;
+        }
+        default: {
+            if (printSummary || !printRecommendation) {
+                for (const msg in result.summary) {
+                    console.log(msg);
+                    console.log();
+                }
+            } else {
+                for (const msg in result.recommendations) {
+                    console.log(msg);
+                    console.log();
+                }
+            }
+            break;
+        }
+    }
+};
 
 const queryCommands = {
     create: { fn: queryCreate, doc: queryCreateDoc },
@@ -325,7 +392,8 @@ const queryCommands = {
     rewrite: { fn: queryRewrite, doc: queryRewriteDoc },
     transcode: { fn: queryTranscode, doc: queryTranscodeDoc },
     diff: { fn: queryDiff, doc: queryDiffDoc },
-    run: { fn: queryRun, doc: queryRunDoc }
+    run: { fn: queryRun, doc: queryRunDoc },
+    analyze: {fn: queryAnalyze, doc: queryAnalyzeDoc} 
 };
 
 export { queryCommands, printQuery }
