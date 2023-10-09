@@ -15,4 +15,3 @@ node_modules/*
 waii-cli-*.*.*.tgz
 .idea/
 
-*.sql
