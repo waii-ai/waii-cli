@@ -9,18 +9,20 @@ const printStatements = (statements?: SemanticStatement[]) => {
         console.log("No statements found.");
         return;
     }
+    
     const p = new Table({
         columns: [
             { name: 'scope', alignment: 'left', maxLen: 10, minLen: 1 },
-            { name: 'statement', alignment: 'left', minLen: 40, maxLen: 40 }
-            // { name: 'labels', alignment: 'left' }
+            { name: 'statement', alignment: 'left', minLen: 40, maxLen: 40 },
+            { name: 'labels', alignment: 'left', minLen: 1, maxLen: 20 }
         ], rowSeparator: true
     });
+
     for (const stmt of statements) {
         p.addRow({
             scope: stmt.scope,
             statement: stmt.statement,
-            // labels: stmt.labels
+            labels: stmt.labels
         });
     }
     p.printTable();
@@ -99,13 +101,15 @@ const contextAddDoc = {
     stdin: "",
     options: {
         format: "choose the format of the response: text or json.",
-        s: "The scope of the statement: [[[[<db>].<schema>].<table>].<column>]"
+        scope: "The scope of the statement: [[[[<db>].<schema>].<table>].<column>]",
+        labels: "Comma separated list of labels for the statement: 'performance, finance'"
     }
 };
 const contextAdd = async (params: CmdParams) => {
     let stmt: SemanticStatement = new SemanticStatement(
-        params.opts['s'],
-        params.vals[0]
+        params.opts['scope'],
+        params.vals[0],
+        params.opts['labels'].split(',').map((s) => s.trim())
     );
     let result = await WAII.SemanticContext.modifySemanticContext(
         {
