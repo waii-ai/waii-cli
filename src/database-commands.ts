@@ -2,6 +2,7 @@ import WAII from 'waii-sdk-js'
 import { Schema, SchemaDescription } from 'waii-sdk-js/dist/clients/database/src/Database';
 import { DBConnection, DBConnectionIndexingStatus, SchemaIndexingStatus } from "waii-sdk-js/dist/clients/database/src/Database";
 import { ArgumentError, CmdParams } from './cmd-line-parser';
+import { queryCommands } from './query-commands';
 import { Table } from 'console-table-printer';
 
 const printConnectionSelector = (connectors?: DBConnection[]) => {
@@ -788,6 +789,17 @@ const getSchemaName = (name: string): string => {
     return name.split('.')[1];
 }
 
+const getTableName = (name: string): string => {
+    if (!name) {
+        throw new ArgumentError("Invalid table name: " + name);
+    }
+
+    if (name.split('.').length < 3) {
+        throw new Error("Invalid name: " + name + ", please use fully qualified name: <db>.<schema>.<table>");
+    }
+    return name.split('.')[2];
+}
+
 const findSchema = async (name: string): Promise<Schema> => {
 
     let result = await WAII.Database.getCatalogs();
@@ -889,6 +901,135 @@ const schemaUpdateSummary = async (params: CmdParams) => {
     });
 }
 
+const schemaMigrationDoc = {
+    description: "Create SQL statement that migrates all table of a schema from one database to another.",
+    parameters: ["<db>.<schema> - name of the schema to migrate", "<db>.<schema> - destination schema."],
+    stdin: "",
+    options: {
+        source: "key of the source database, see 'waii database list' for options",
+        destination: "key of the destination database."
+    }
+};
+const schemaMigration = async (params: CmdParams) => {
+    let name = params.vals[0];
+    let database_name = getDBName(name);
+    let schema_name = getSchemaName(name);
+
+    let dest_name = params.vals[1];
+
+    let dest_database_name = '';
+    let dest_schema_name = schema_name;
+
+    if (dest_name) {
+        dest_database_name = getDBName(dest_name);
+        dest_schema_name = getSchemaName(dest_name);
+    }
+
+    let source = params.opts['source'];
+    let dest = params.opts['destination'];
+
+    if (!source || !dest) {
+        throw new ArgumentError("Please provide valid source and destination.");
+    }
+
+    let dbResult = await WAII.Database.activateConnection(source);
+
+    let result = await WAII.Database.getCatalogs();
+    if (!result.catalogs || result.catalogs.length === 0) {
+        throw new Error("No databases configured.");
+    }
+
+    if (!result.catalogs[0].schemas) {
+        throw new Error("No tables found.");
+    }
+
+    let tables = []
+    for (const schema of result.catalogs[0].schemas) {
+        if (schema.name.schema_name === schema_name) {
+            console.log();
+            for (const table of (schema.tables ? schema.tables : [])) {
+                params.vals[0] = `${database_name}.${schema_name}.${table.name.table_name}`;
+                await tableMigration(params);
+                console.log();
+            }
+            break;
+        }
+    }
+}
+
+const tableMigrationDoc = {
+    description: "Create SQL statement that migrates a table from one database to another.",
+    parameters: ["<db>.<schema>.<table> - name of the table to migrate", "<db>.<schema> - destination schema."],
+    stdin: "",
+    options: {
+        source: "key of the source database, see 'waii database list' for options",
+        destination: "key of the destination database."
+    }
+};
+const tableMigration = async (params: CmdParams) => {
+    let name = params.vals[0];
+    let database_name = getDBName(name);
+    let schema_name = getSchemaName(name);
+    let table_name = getTableName(name);
+
+    let dest_name = params.vals[1];
+
+    let dest_database_name = '';
+    let dest_schema_name = schema_name;
+
+    if (dest_name) {
+        dest_database_name = getDBName(dest_name);
+        dest_schema_name = getSchemaName(dest_name);
+    }
+
+    let source = params.opts['source'];
+    let dest = params.opts['destination'];
+
+    if (!source || !dest) {
+        throw new ArgumentError("Please provide valid source and destination.");
+    }
+
+    let msg = "Generate create table statement for the table \""+name;
+    let context = [{database_name: database_name, schema_name: schema_name, table_name: table_name}];
+
+    let dbResult = await WAII.Database.activateConnection(source);
+    
+    let sourceType = '';
+    let destType = '';
+
+    if (dbResult.connectors) {
+        for (const c of dbResult.connectors) {
+            if (c.key === source) {
+                sourceType = c.db_type;
+            }
+
+            if (c.key === dest) {
+                destType = c.db_type;
+            }
+        }
+    }
+
+    let result = await WAII.Query.generate({search_context: context, ask: msg});
+
+    if (!result.query) {
+        throw new Error("Translation failed.");
+    }
+
+    msg = 
+`Rewrite the following create statement coming from a ${sourceType} database to produce the same table in ${destType}.
+
+Only use data types and contructs available in ${destType}. Make sure all the types are translated correctly for ${destType}.
+
+Create the new table in the schema: ${schema_name}. Do not include a database name in the statement.
+
+Statement: ${result.query}
+`
+    await WAII.Database.activateConnection(dest);
+
+    params.vals[0] = msg
+    await queryCommands.create.fn(params);
+}
+
 const databaseCommands = {
     list: { fn: databaseList, doc: databaseListDoc },
     add: { fn: databaseAdd, doc: databaseAddDoc },
@@ -902,13 +1043,15 @@ const schemaCommands = {
     list: { fn: schemaList, doc: schemaListDoc },
     update: { fn: schemaUpdateDescription, doc: schemaUpdateDescriptionDoc },
     update_questions: { fn: schemaUpdateQuestions, doc: schemaUpdateQuestionDoc },
-    update_summary: { fn: schemaUpdateSummary, doc: schemaUpdateSummaryDoc }
+    update_summary: { fn: schemaUpdateSummary, doc: schemaUpdateSummaryDoc },
+    migrate: { fn: schemaMigration, doc: schemaMigrationDoc }
 };
 
 const tableCommands = {
     describe: { fn: tableDescribe, doc: tableDescribeDoc },
     list: { fn: tableList, doc: tableListDoc },
-    update: { fn: updateTableDescription, doc: updateTableDescriptionDoc }
-}
+    update: { fn: updateTableDescription, doc: updateTableDescriptionDoc },
+    migrate: { fn: tableMigration, doc: tableMigrationDoc }
+};
 
 export { databaseCommands, schemaCommands, tableCommands };
