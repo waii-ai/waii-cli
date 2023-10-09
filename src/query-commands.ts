@@ -292,25 +292,29 @@ const queryRun = async (params: CmdParams) => {
                 } else {
                     // Define the columns based on the result's column definitions
                     const columns = result.column_definitions.map((c) => {
-                        return { name: c.name, alignment: 'left' }; // you can customize alignment here
+                        return { name: c.name, alignment: 'left' };
                     });
 
-                    // Create a new Table with the columns
-                    const p = new Table({ columns });
+                    if (columns.length === 0) {
+                        console.log("Statement succeeded.");
+                    } else {
+                        // Create a new Table with the columns
+                        const p = new Table({ columns });
 
-                    // Iterate through the rows and add them to the table
-                    for (const row of result.rows) {
-                        const rowObj: { [key: string]: any } = {};
-                        for (const column of result.column_definitions) {
-                            // @ts-ignore
-                            const value = row[column.name];
-                            rowObj[column.name] = sanitizeData(column.type, value)
+                        // Iterate through the rows and add them to the table
+                        for (const row of result.rows) {
+                            const rowObj: { [key: string]: any } = {};
+                            for (const column of result.column_definitions) {
+                                // @ts-ignore
+                                const value = row[column.name];
+                                rowObj[column.name] = sanitizeData(column.type, value)
+                            }
+                            p.addRow(rowObj);
                         }
-                        p.addRow(rowObj);
-                    }
 
-                    // Print the table
-                    p.printTable();
+                        // Print the table
+                        p.printTable();
+                    }
                 }
             }
         }
