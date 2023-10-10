@@ -331,7 +331,8 @@ const queryAnalyzeDoc = {
         query_id: "You can specify a query that ran already and get performance insights.",
         summary: "Print the performance analysis summary.",
         recommendations: "Print recommendations on how to improve the query.",
-        query_text: "Print query (useful when you're using query_id)"
+        query_text: "Print query (useful when you're using query_id)",
+        times: "Print the query execution and compile time."
     }
 };
 const queryAnalyze = async (params: CmdParams) => {
@@ -350,7 +351,8 @@ const queryAnalyze = async (params: CmdParams) => {
     let printSummary = 'summary' in params.opts;
     let printRecommendation = 'recommendation' in params.opts;
     let printQueryText = 'query_text' in params.opts;
-    let printAll = !(printSummary || printRecommendation || printQueryText);
+    let printTimes = 'times' in params.opts;
+    let printAll = !(printSummary || printRecommendation || printQueryText || printTimes);
     
     if (!query && !queryId) {
         throw new ArgumentError("No query or query_id specified.");
@@ -388,6 +390,20 @@ const queryAnalyze = async (params: CmdParams) => {
                 }
             }
 
+            if (result.execution_time_ms !== undefined && result.compilation_time_ms !== undefined) {
+                if (!printTimes) {
+                    console.log();
+                    console.log('Times:');
+                    console.log('---');
+                    console.log(); 
+                }
+                console.log(`Compile time: ${result.compilation_time_ms} ms, execution time: ${result.execution_time_ms} ms\n`)
+                
+                if (!printTimes) {
+                    console.log();
+                }
+            }
+
             if (printSummary || printAll) {
                 if (!printSummary) {
                     console.log();
@@ -395,10 +411,12 @@ const queryAnalyze = async (params: CmdParams) => {
                     console.log('---');
                     console.log(); 
                 }
+
                 for (const msg of result.summary) {
                     console.log(msg);
                     console.log();
                 }
+
                 if (!printSummary) {
                     console.log();
                 }
