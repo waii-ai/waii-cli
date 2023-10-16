@@ -192,8 +192,8 @@ const queryRewrite = async (params: CmdParams) => {
 }
 
 const queryTranscodeDoc = {
-    description: "Translate a query from one dialect to another.",
-    parameters: [""],
+    description: "Translate queries from one dialect to another, if multiple queries are provided, they will be converted one by one.",
+    parameters: ["ask - you can specify additional instructions to translate the query, such as 'use the test schema for converted query'"],
     stdin: "The query to translate.",
     options: {
         format: "choose the format of the response: text or json",
@@ -209,9 +209,34 @@ const queryTranscode = async (params: CmdParams) => {
     if (from_dialect) {
         msg += " from " + from_dialect;
     }
+    if (params.vals.length > 0) {
+        msg += ". Instructions:" + params.vals[0];
+    }
 
     params.vals[0] = msg
-    await queryUpdate(params);
+    let sqls = await getAllSqlQueriesFromStr(params.input);
+    for (const sql of sqls) {
+        console.log("--\n")
+        params.input = sql;
+        await queryUpdate(params);
+    }
+}
+
+const getAllSqlQueriesFromStr = async (input: string) => {
+        // Remove lines that start with --
+        const cleanedInput = input.split('\n')
+            .filter(line => !line.trim().startsWith('--'))
+            .join('\n');
+
+        // Split input by semicolon
+        const potentialQueries = cleanedInput.split(';');
+
+        // Filter and process each SQL
+        const result = potentialQueries
+            .map(sql => sql.trim())
+            .filter(sql => sql.length > 0);  // Remove empty or whitespace-only queries
+
+        return result;
 }
 
 const printPrettyConsole = (str: any) => {
@@ -353,7 +378,7 @@ const queryAnalyze = async (params: CmdParams) => {
     let printQueryText = 'query_text' in params.opts;
     let printTimes = 'times' in params.opts;
     let printAll = !(printSummary || printRecommendation || printQueryText || printTimes);
-    
+
     if (!query && !queryId) {
         throw new ArgumentError("No query or query_id specified.");
     }
