@@ -215,10 +215,12 @@ const queryTranscode = async (params: CmdParams) => {
 
     params.vals[0] = msg
     let sqls = await getAllSqlQueriesFromStr(params.input);
-    for (const sql of sqls) {
-        console.log("--\n")
-        params.input = sql;
+    for (let i = 0; i < sqls.length; i++) {
+        params.input = sqls[i];
         await queryUpdate(params);
+        if (i < sqls.length - 1) {
+            console.log("--\n")
+        }
     }
 }
 
