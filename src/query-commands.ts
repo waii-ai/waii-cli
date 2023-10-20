@@ -205,22 +205,21 @@ const queryTranscode = async (params: CmdParams) => {
     let from_dialect = params.opts['from']
     let to_dialect = params.opts['to'] ? params.opts['to'] : 'Snowflake';
     params.opts['dialect'] = to_dialect;
-    let msg = "Rewrite the query to produce the same output in " + to_dialect
-    if (from_dialect) {
-        msg += " from " + from_dialect;
-    }
-    if (params.vals.length > 0) {
-        msg += ". Instructions:" + params.vals[0];
-    }
-
-    params.vals[0] = msg
     let sqls = await getAllSqlQueriesFromStr(params.input);
     for (let i = 0; i < sqls.length; i++) {
         params.input = sqls[i];
-        await queryUpdate(params);
+
+        let genResult = await WAII.Query.transcode({
+            ask: params.vals[0] ? params.vals[0] : "",
+            target_dialect: to_dialect,
+            source_dialect: from_dialect,
+            source_query: params.input
+        });
+
         if (i < sqls.length - 1) {
             console.log("--\n")
         }
+        printQuery(genResult.query)
     }
 }
 
