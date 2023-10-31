@@ -34,16 +34,19 @@ const queryCreate = async (params: CmdParams) => {
     if (!ask) {
         ask = params.input;
     }
-
-    let result = await WAII.Query.generate({ ask: ask, dialect: dialect });
-    switch (params.opts['format']) {
+    if(!ask) {
+      throw new ArgumentError("Query generation requires a ask or tweak.");
+    } else {
+      let result = await WAII.Query.generate({ ask: ask, dialect: dialect });
+      switch (params.opts['format']) {
         case 'json': {
-            console.log(JSON.stringify(result, null, 2));
-            break;
+          console.log(JSON.stringify(result, null, 2));
+          break;
         }
         default: {
-            printQuery(result.query);
+          printQuery(result.query);
         }
+      }
     }
 }
 
@@ -64,23 +67,23 @@ const queryUpdate = async (params: CmdParams) => {
 
     if (!query) {
         throw new ArgumentError("No query specified.");
-    }
-
-    let descResult = await WAII.Query.describe({ query: query });
-    let genResult = await WAII.Query.generate({
+    } else {
+      let descResult = await WAII.Query.describe({query: query});
+      let genResult = await WAII.Query.generate({
         ask: params.vals[0],
         dialect: dialect,
-        tweak_history: [{ ask: descResult.summary, sql: query }],
-        search_context: [{ schema_name: schema }]
-    });
-    switch (params.opts['format']) {
+        tweak_history: [{ask: descResult.summary, sql: query}],
+        search_context: [{schema_name: schema}]
+      });
+      switch (params.opts['format']) {
         case 'json': {
-            console.log(JSON.stringify(genResult, null, 2));
-            break;
+          console.log(JSON.stringify(genResult, null, 2));
+          break;
         }
         default: {
-            printQuery(genResult.query);
+          printQuery(genResult.query);
         }
+      }
     }
 }
 
@@ -116,15 +119,19 @@ const queryExplainDoc = {
 };
 const queryExplain = async (params: CmdParams) => {
     let query = params.input;
-    let result = await WAII.Query.describe({ query: query });
-    switch (params.opts['format']) {
+    if(query) {
+      let result = await WAII.Query.describe({query: query});
+      switch (params.opts['format']) {
         case 'json': {
-            console.log(JSON.stringify(result, null, 2));
-            break;
+          console.log(JSON.stringify(result, null, 2));
+          break;
         }
         default: {
-            log_query_explain_result(result);
+          log_query_explain_result(result);
         }
+      }
+    } else {
+      throw new ArgumentError('Query explain requires a query.')
     }
 }
 
@@ -164,16 +171,19 @@ const queryDiff = async (params: CmdParams) => {
     if (!query) {
         throw new ArgumentError("Could not find second query.");
     }
-
-    let result = await WAII.Query.diff({ query: query, previous_query: prev_query });
-    switch (params.opts['format']) {
+    if(query && prev_query) {
+      let result = await WAII.Query.diff({query: query, previous_query: prev_query});
+      switch (params.opts['format']) {
         case 'json': {
-            console.log(JSON.stringify(result, null, 2));
-            break;
+          console.log(JSON.stringify(result, null, 2));
+          break;
         }
         default: {
-            log_query_explain_result(result);
+          log_query_explain_result(result);
         }
+      }
+    } else {
+      throw new ArgumentError('Query diff requires two queries.')
     }
 }
 
@@ -265,7 +275,6 @@ const sanitizeData = (rowName: string, columnValue: any) => {
     } else {
       return String(columnValue);
     }
-  
 }
 
 const queryRunDoc = {
@@ -287,64 +296,64 @@ const queryRun = async (params: CmdParams) => {
 
     if (!query) {
         throw new ArgumentError("No query specified.");
-    }
-
-    let schema: SchemaName | null = null;
-    let name = params.opts['schema'];
-    if (name) {
+    } else {
+      let schema: SchemaName | null = null;
+      let name = params.opts['schema'];
+      if (name) {
         let parts = name.split('.');
         if (parts.length !== 2) {
-            throw new ArgumentError("Schema name must be <db>.<schema>");
+          throw new ArgumentError("Schema name must be <db>.<schema>");
         }
         schema = {
-            schema_name: parts[1],
-            database_name: parts[0]
+          schema_name: parts[1],
+          database_name: parts[0]
         };
-    }
+      }
 
-    const connection = await WAII.Database.getConnections();
-    let result = await WAII.Query.run({ query: query, ...(schema && {current_schema: schema})});
-    switch (params.opts['format']) {
+      const connection = await WAII.Database.getConnections();
+      let result = await WAII.Query.run({ query: query, ...(schema && {current_schema: schema})});
+      switch (params.opts['format']) {
         case 'json': {
-            printPrettyConsole(result);
-            break;
+          printPrettyConsole(result);
+          break;
         }
         default: {
-            if (result.column_definitions && result.rows) {
-                if (connection.default_db_connection_key?.includes('mongodb://') ||
-                    connection.default_db_connection_key?.includes('mongodb+srv://')) {
-                    printPrettyConsole((result.rows[0] as { [key: string]: any })['DOC']);
-                    return;
+          if (result.column_definitions && result.rows) {
+            if (connection.default_db_connection_key?.includes('mongodb://') ||
+              connection.default_db_connection_key?.includes('mongodb+srv://')) {
+              printPrettyConsole((result.rows[0] as { [key: string]: any })['DOC']);
+              return;
+            } else {
+              // Define the columns based on the result's column definitions
+              const columns = result.column_definitions.map((c) => {
+                return {name: c.name, alignment: 'left'};
+              });
+
+                if (columns.length === 0) {
+                  console.log("Statement succeeded.");
                 } else {
-                    // Define the columns based on the result's column definitions
-                    const columns = result.column_definitions.map((c) => {
-                        return { name: c.name, alignment: 'left' };
-                    });
+                  // Create a new Table with the columns
+                  const p = new Table({columns});
 
-                    if (columns.length === 0) {
-                        console.log("Statement succeeded.");
-                    } else {
-                        // Create a new Table with the columns
-                        const p = new Table({ columns });
-
-                        // Iterate through the rows and add them to the table
-                        for (const row of result.rows) {
-                            const rowObj: { [key: string]: any } = {};
-                            for (const column of result.column_definitions) {
-                                // @ts-ignore
-                                const value = row[column.name];
-                                rowObj[column.name] = sanitizeData(column.type, value)
-                            }
-                            p.addRow(rowObj);
-                        }
-
-                        // Print the table
-                        p.printTable();
+                  // Iterate through the rows and add them to the table
+                  for (const row of result.rows) {
+                    const rowObj: { [key: string]: any } = {};
+                    for (const column of result.column_definitions) {
+                      // @ts-ignore
+                      const value = row[column.name];
+                      rowObj[column.name] = sanitizeData(column.type, value)
                     }
+                    p.addRow(rowObj);
+                  }
+
+                  // Print the table
+                  p.printTable();
                 }
+              }
             }
+          }
         }
-    }
+      }
 }
 
 const queryAnalyzeDoc = {
@@ -382,88 +391,89 @@ const queryAnalyze = async (params: CmdParams) => {
 
     if (!query && !queryId) {
         throw new ArgumentError("No query or query_id specified.");
-    }
-
-    if (!queryId) {
-        let result = await WAII.Query.submit({query: query});
-        if (!result.query_id) {
-            throw new ArgumentError("Unable to retrieve query id from running query.");
+    } else {
+      if (!queryId) {
+        let result1 = await WAII.Query.submit({query: query});
+        if (!result1.query_id) {
+          throw new ArgumentError("Unable to retrieve query id from running query.");
+        } else {
+          queryId = result1.query_id;
+          // don't need the result but need to wait for the query to finish.
+          WAII.Query.getResults({query_id: queryId});
         }
-        queryId = result.query_id;
-        // don't need the result but need to wait for the query to finish.
-        WAII.Query.getResults({query_id: queryId});
-    }
 
-    let result = await WAII.Query.analyzePerformance({query_id: queryId});
+        let result = await WAII.Query.analyzePerformance({query_id: queryId});
 
-    switch (params.opts['format']) {
-        case 'json': {
+        switch (params.opts['format']) {
+          case 'json': {
             console.log(JSON.stringify(result, null, 2));
             break;
-        }
-        default: {
+          }
+          default: {
 
             if (printQueryText || printAll) {
-                if (printAll) {
-                    console.log('Query:');
-                    console.log('---');
-                }
+              if (printAll) {
+                console.log('Query:');
+                console.log('---');
+              }
 
-                printQuery(result.query_text);
+              printQuery(result.query_text);
 
-                if (printAll) {
-                    console.log();
-                }
+              if (printAll) {
+                console.log();
+              }
             }
 
             if (result.execution_time_ms !== undefined && result.compilation_time_ms !== undefined) {
-                if (!printTimes) {
-                    console.log();
-                    console.log('Times:');
-                    console.log('---');
-                    console.log(); 
-                }
-                console.log(`Compile time: ${result.compilation_time_ms} ms, execution time: ${result.execution_time_ms} ms\n`)
-                
-                if (!printTimes) {
-                    console.log();
-                }
+              if (!printTimes) {
+                console.log();
+                console.log('Times:');
+                console.log('---');
+                console.log();
+              }
+              console.log(`Compile time: ${result.compilation_time_ms} ms, execution time: ${result.execution_time_ms} ms\n`)
+
+              if (!printTimes) {
+                console.log();
+              }
             }
 
             if (printSummary || printAll) {
-                if (!printSummary) {
-                    console.log();
-                    console.log('Summary:');
-                    console.log('---');
-                    console.log(); 
-                }
+              if (!printSummary) {
+                console.log();
+                console.log('Summary:');
+                console.log('---');
+                console.log();
+              }
 
-                for (const msg of result.summary) {
-                    console.log(msg);
-                    console.log();
-                }
+              for (const msg of result.summary) {
+                console.log(msg);
+                console.log();
+              }
 
-                if (!printSummary) {
-                    console.log();
-                }
-            } 
-            
+              if (!printSummary) {
+                console.log();
+              }
+            }
+
             if (printRecommendation || printAll) {
-                if (!printRecommendation) {
-                    console.log('Recommendations:');
-                    console.log('---');
-                    console.log();    
-                }
-                for (const msg of result.recommendations) {
-                    console.log(msg);
-                    console.log();
-                }
-                if (!printRecommendation) {
-                    console.log();
-                }
+              if (!printRecommendation) {
+                console.log('Recommendations:');
+                console.log('---');
+                console.log();
+              }
+              for (const msg of result.recommendations) {
+                console.log(msg);
+                console.log();
+              }
+              if (!printRecommendation) {
+                console.log();
+              }
             }
             break;
+          }
         }
+      }
     }
 };
 
