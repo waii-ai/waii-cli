@@ -77,7 +77,8 @@ const printConnectors = (connectors?: DBConnection[], status?: {
                     total += schema_status.n_total_tables;
                     pending += schema_status.n_pending_indexing_tables;
                 }
-                percentage = (total > 0) ? (total - pending) / total : 1;
+                let denoTotal = db_status.status === 'indexing' ? total + 5 : total;
+                percentage = (total > 0) ? (total - pending) / denoTotal : 1;
             }
 
             if (connection.key == defaultScope) {
