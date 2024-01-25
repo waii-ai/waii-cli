@@ -1,6 +1,13 @@
 import WAII from 'waii-sdk-js'
 import { Schema, SchemaDescription } from 'waii-sdk-js/dist/clients/database/src/Database';
-import { DBConnection, DBConnectionIndexingStatus, SchemaIndexingStatus } from "waii-sdk-js/dist/clients/database/src/Database";
+import {
+    DBConnection,
+    DBConnectionIndexingStatus,
+    SchemaIndexingStatus,
+    DBContentFilter,
+    DBContentFilterScope,
+    DBContentFilterType
+} from "waii-sdk-js/dist/clients/database/src/Database";
 import { ArgumentError, CmdParams } from './cmd-line-parser';
 import { queryCommands } from './query-commands';
 import { Table } from 'console-table-printer';
@@ -197,18 +204,55 @@ const databaseAddDoc = {
     stdin: "",
     options: {
         format: "choose the format of the response: text or json.",
+        connect_string: "specify connection string instead of individual fields",
         account: "account name",
         db: "database name",
         warehouse: "warehouse name",
         role: "role name",
         user: "user name",
-        pass: "password"
+        pass: "password",
+        no_column_samples: "if set, will not sample columns",
+        exclude_columns: "don't index columns matching this pattern",
+        exclude_tables: "don't index tables matching this pattern",
+        exclude_schemas: "don't index schemas matching this pattern"
     }
 };
 const databaseAdd = async (params: CmdParams) => {
     let parameters = {
         config_file: undefined
     }
+
+    let filters: DBContentFilter[] = []
+    if (params.opts['exclude_columns']) {
+        filters.push({
+            filter_scope: DBContentFilterScope.column,
+            filter_type: DBContentFilterType.exclude,
+            ignore_case: true,
+            pattern: params.opts['exclude_columns']
+
+        })
+    }
+
+    if (params.opts['exclude_tables']) {
+        filters.push({
+            filter_scope: DBContentFilterScope.table,
+            filter_type: DBContentFilterType.exclude,
+            ignore_case: true,
+            pattern: params.opts['exclude_tables']
+
+        })
+    }
+
+    if (params.opts['exclude_schemas']) {
+        filters.push({
+            filter_scope: DBContentFilterScope.schema,
+            filter_type: DBContentFilterType.exclude,
+            ignore_case: true,
+            pattern: params.opts['exclude_schemas']
+
+        })
+    }
+
     let connect_string = params.opts['connect_string']
     if (connect_string) {
         // parse it to URI
@@ -317,22 +361,26 @@ const databaseAdd = async (params: CmdParams) => {
         }
     }
 
+    let db_conn: DBConnection = {
+        key: '',
+        db_type: db_type,
+        account_name: params.opts['account'],
+        database: params.opts['db'],
+        warehouse: params.opts['warehouse'],
+        role: params.opts['role'],
+        username: params.opts['user'],
+        password: params.opts['pass'],
+        path: params.opts['path'],
+        host: params.opts['host'],
+        port: Number(params.opts['port']),
+        parameters: parameters,
+        sample_col_values: params.opts['no_column_samples'] ? false : true,
+        db_content_filters: filters
+    };
+
     let result = await WAII.Database.modifyConnections(
         {
-            updated: [{
-                key: '',
-                db_type: db_type,
-                account_name: params.opts['account'],
-                database: params.opts['db'],
-                warehouse: params.opts['warehouse'],
-                role: params.opts['role'],
-                username: params.opts['user'],
-                password: params.opts['pass'],
-                path: params.opts['path'],
-                host: params.opts['host'],
-                port: Number(params.opts['port']),
-                parameters: parameters
-            }]
+            updated: [db_conn]
         }
     );
     switch (params.opts['format']) {
@@ -369,7 +417,7 @@ const databaseActivate = async (params: CmdParams) => {
         }
         waitTime--;
         let timer;
-        await new Promise(resolve => {timer = setTimeout(resolve, 1000)});
+        await new Promise(resolve => { timer = setTimeout(resolve, 1000) });
         clearTimeout(timer);
     }
     throw new Error("Failed to activate database connection after " + waitTime + " seconds.");
@@ -445,7 +493,7 @@ const schemaList = async (params: CmdParams) => {
     }
     switch (params.opts['format']) {
         case 'json': {
-            console.log(JSON.stringify(result.catalogs[0].schemas, null , 2));
+            console.log(JSON.stringify(result.catalogs[0].schemas, null, 2));
             break;
         }
         default: {
@@ -990,11 +1038,11 @@ const tableMigration = async (params: CmdParams) => {
         throw new ArgumentError("Please provide valid source and destination.");
     }
 
-    let msg = "Generate create table statement for the table \""+name;
-    let context = [{database_name: database_name, schema_name: schema_name, table_name: table_name}];
+    let msg = "Generate create table statement for the table \"" + name;
+    let context = [{ database_name: database_name, schema_name: schema_name, table_name: table_name }];
 
     let dbResult = await WAII.Database.activateConnection(source);
-    
+
     let sourceType = '';
     let destType = '';
 
@@ -1010,14 +1058,14 @@ const tableMigration = async (params: CmdParams) => {
         }
     }
 
-    let result = await WAII.Query.generate({search_context: context, ask: msg});
+    let result = await WAII.Query.generate({ search_context: context, ask: msg });
 
     if (!result.query) {
         throw new Error("Translation failed.");
     }
 
-    msg = 
-`Rewrite the following create statement coming from a ${sourceType} database to produce the same table in ${destType}.
+    msg =
+        `Rewrite the following create statement coming from a ${sourceType} database to produce the same table in ${destType}.
 
 Only use data types and contructs available in ${destType}. Make sure all the types are translated correctly for ${destType}.
 
