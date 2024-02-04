@@ -1,5 +1,5 @@
 import WAII from 'waii-sdk-js'
-import { Schema, SchemaDescription } from 'waii-sdk-js/dist/clients/database/src/Database';
+import {Schema, SchemaDescription, SchemaName, TableName} from 'waii-sdk-js/dist/clients/database/src/Database';
 import {
     DBConnection,
     DBConnectionIndexingStatus,
@@ -664,6 +664,102 @@ const tableList = async (params: CmdParams) => {
     }
 }
 
+const quoteNameIfNeeded = (name?: string): string | null => {
+    if (!name) {
+        return null;
+    }
+
+    // mixed case or contains special characters [other than 0-9a-zA-Z_]
+    if (name.toLowerCase() !== name || /[^0-9a-zA-Z_]/.test(name)) {
+        return '"' + name + '"';
+    }
+    return name;
+}
+
+const quoteTableNameIfNeeded = (name: TableName): string => {
+    let db_name = quoteNameIfNeeded(name.database_name);
+    let schema_name = quoteNameIfNeeded(name.schema_name);
+    let table_name = quoteNameIfNeeded(name.table_name);
+
+    // connect not-null parts
+    let result = "";
+    if (db_name) {
+        result += db_name + ".";
+    }
+    if (schema_name) {
+        result += schema_name + ".";
+    }
+    return result + table_name;
+}
+
+const quoteSchemaNameIfNeeded = (name: SchemaName): string => {
+    let db_name = quoteNameIfNeeded(name.database_name);
+    let schema_name = quoteNameIfNeeded(name.schema_name);
+
+    // connect not-null parts
+    let result = "";
+    if (db_name) {
+        result += db_name + ".";
+    }
+    return result + schema_name;
+}
+
+const tableDDLDoc = {
+    description: "Convert from table definition to ddl",
+    parameters: [],
+    stdin: ""
+
+};
+const tableDDL = async (params: CmdParams) => {
+    let result = await WAII.Database.getCatalogs();
+    if (!result.catalogs || result.catalogs.length === 0) {
+        throw new Error("No databases configured.");
+    }
+    let ddl = ''
+
+    if (!result.catalogs[0].schemas) {
+        throw new Error("No tables found.");
+    }
+    for (const catalog of result.catalogs) {
+        ddl += `CREATE DATABASE IF NOT EXISTS ${quoteNameIfNeeded(catalog.name)};\n`
+
+        if (!catalog.schemas) {
+            continue;
+        }
+        for (const schema of catalog.schemas) {
+            // Don't process any information schema tables
+            if (schema.name.schema_name.toLowerCase() === 'information_schema') {
+                continue;
+            }
+
+            ddl += `CREATE SCHEMA IF NOT EXISTS ${quoteSchemaNameIfNeeded(schema.name)};\n`
+
+            if (!schema.tables) {
+                continue;
+            }
+            for (const table of schema.tables) {
+                if (!table.columns) {
+                    continue;
+                }
+                ddl += `CREATE TABLE IF NOT EXISTS ${quoteTableNameIfNeeded(table.name)} (\n`
+
+                for (let i = 0; i < table.columns.length; i++) {
+                    const column = table.columns[i];
+                    ddl += `    ${quoteNameIfNeeded(column.name)} ${column.type}`
+                    if (i < table.columns.length - 1) {
+                        ddl += ",\n"
+                    }
+                }
+                ddl += `);\n`
+            }
+        }
+    }
+
+    console.log(ddl)
+
+    // TODO, add indexes, constraints, etc
+}
+
 const tableDescribeDoc = {
     description: "Show the details of a table.",
     parameters: ["<db>.<schema>.<table> - table name of the table to describe."],
@@ -1100,7 +1196,8 @@ const tableCommands = {
     describe: { fn: tableDescribe, doc: tableDescribeDoc },
     list: { fn: tableList, doc: tableListDoc },
     update: { fn: updateTableDescription, doc: updateTableDescriptionDoc },
-    migrate: { fn: tableMigration, doc: tableMigrationDoc }
+    migrate: { fn: tableMigration, doc: tableMigrationDoc },
+    ddl: { fn: tableDDL, doc: tableDDLDoc }
 };
 
 export { databaseCommands, schemaCommands, tableCommands };
