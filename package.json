@@ -16,7 +16,7 @@
   "author": "Waii, Inc. <support@waii.ai> (https://www.waii.ai)",
   "license": "Apache-2.0",
   "repository": {
-    "url": "https://github.com/waii-ai/waii-cli",
+    "url": "git+https://github.com/waii-ai/waii-cli.git",
     "type": "git"
   },
   "dependencies": {
