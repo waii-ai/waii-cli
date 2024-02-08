@@ -4,7 +4,7 @@ import { SemanticStatement } from "waii-sdk-js/dist/clients/semantic-context/src
 import { Table } from "console-table-printer";
 import { IIndexable } from "./query-commands";
 
-const printStatements = (statements?: SemanticStatement[]) => {
+const printStatements = (statements?: SemanticStatement[], total?: number) => {
     if (!statements) {
         console.log("No statements found.");
         return;
@@ -26,6 +26,11 @@ const printStatements = (statements?: SemanticStatement[]) => {
         });
     }
     p.printTable();
+
+    if (total) {
+        console.log();
+        console.log(total + " additional statements available");
+    }
 }
 
 const contextListDoc = {
@@ -33,11 +38,31 @@ const contextListDoc = {
     parameters: [],
     stdin: "",
     options: {
-        format: "choose the format of the response: text or json.",
+        limit: "How many statements to fetch",
+        offset: "Which statement to start with",
+        search: "Which string to search for in the statements",
+        always_include: "Filter that decides which type of statement to fetch",
+        format: "Choose the format of the response: text or json.",
     }
 };
 const contextList = async (params: CmdParams) => {
-    let result = await WAII.SemanticContext.getSemanticContext();
+
+    let always_include: boolean = 'always_include' in params.opts ? (params.opts['always_include'] ? true : false) : false;
+    let search: string = 'search' in params.opts ? params.opts['search'] : '';
+    let offset: number = 'offset' in params.opts ? +params.opts['offset'] : 0;
+    let limit: number = 'limit' in params.opts ? +params.opts['limit'] : 100;
+
+    let result = await WAII.SemanticContext.getSemanticContext(
+        {
+            filter: {
+                always_include: always_include
+            },
+            search_text: search,
+            offset: offset,
+            limit: limit
+        }
+    );
+
     // filter result to only show the statements which has id != null
     let filteredResult = []
     if (result.semantic_context !== undefined) {
@@ -50,7 +75,7 @@ const contextList = async (params: CmdParams) => {
             break;
         }
         default: {
-            printStatements(result.semantic_context);
+            printStatements(result.semantic_context, result.total_candidates);
         }
     }
 }
@@ -95,6 +120,10 @@ const contextImport = async (params: CmdParams) => {
     console.log("Read ", totalCounter, " statement(s), ", "imported ", importCounter, " statement(s)");
 }
 
+function stringToBoolean(str: string): boolean {
+    return /^(true|1|yes|y)$/i.test(str.trim());
+}
+
 const contextAddDoc = {
     description: "Create a new semantic statement in the semantic context.",
     parameters: [""],
@@ -102,14 +131,20 @@ const contextAddDoc = {
     options: {
         format: "choose the format of the response: text or json.",
         scope: "The scope of the statement: [[[[<db>].<schema>].<table>].<column>]",
-        labels: "Comma separated list of labels for the statement: 'performance, finance'"
+        labels: "Comma separated list of labels for the statement: 'performance, finance'",
+        always_include: "Whether the statement should be dynamically selected by query or always included.",
+        search_keys: "Comma separated list of keys to use.",
+        extract_prompt: "Prompt to be used to extract information when the statement is used."
     }
 };
 const contextAdd = async (params: CmdParams) => {
     let stmt: SemanticStatement = new SemanticStatement(
         params.opts['scope'],
         params.vals[0],
-        params.opts['labels'].split(',').map((s) => s.trim())
+        params.opts['labels'].split(',').map((s) => s.trim()),
+        stringToBoolean(params.opts['always_include']),
+        params.opts['search_keys'].split(',').map((s) => s.trim()),
+        params.opts['extract_prompt']
     );
     let result = await WAII.SemanticContext.modifySemanticContext(
         {
