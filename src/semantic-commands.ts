@@ -33,6 +33,10 @@ const printStatements = (statements?: SemanticStatement[], total?: number) => {
     }
 }
 
+function stringToBoolean(str: string): boolean {
+    return /^(true|1|yes|y)$/i.test(str.trim());
+}
+
 const contextListDoc = {
     description: "List all semantic context of the current database.",
     parameters: [],
@@ -47,22 +51,22 @@ const contextListDoc = {
 };
 const contextList = async (params: CmdParams) => {
 
-    let always_include: boolean = 'always_include' in params.opts ? (params.opts['always_include'] ? true : false) : false;
+    let always_include: boolean = 'always_include' in params.opts ? stringToBoolean(params.opts['always_include']) : false;
     let search: string = 'search' in params.opts ? params.opts['search'] : '';
     let offset: number = 'offset' in params.opts ? +params.opts['offset'] : 0;
     let limit: number = 'limit' in params.opts ? +params.opts['limit'] : 100;
 
-    let result = await WAII.SemanticContext.getSemanticContext(
-        {
-            filter: {
-                always_include: always_include
-            },
-            search_text: search,
-            offset: offset,
-            limit: limit
-        }
-    );
+    let spec = {
+        filter: {
+            always_include: always_include
+        },
+        search_text: search,
+        offset: offset,
+        limit: limit
+    };
 
+    let result = await WAII.SemanticContext.getSemanticContext(spec);
+    
     // filter result to only show the statements which has id != null
     let filteredResult = []
     if (result.semantic_context !== undefined) {
@@ -120,10 +124,6 @@ const contextImport = async (params: CmdParams) => {
     console.log("Read ", totalCounter, " statement(s), ", "imported ", importCounter, " statement(s)");
 }
 
-function stringToBoolean(str: string): boolean {
-    return /^(true|1|yes|y)$/i.test(str.trim());
-}
-
 const contextAddDoc = {
     description: "Create a new semantic statement in the semantic context.",
     parameters: [""],
@@ -146,6 +146,7 @@ const contextAdd = async (params: CmdParams) => {
         params.opts['search_keys'].split(',').map((s) => s.trim()),
         params.opts['extract_prompt']
     );
+
     let result = await WAII.SemanticContext.modifySemanticContext(
         {
             updated: [stmt]
