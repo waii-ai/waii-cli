@@ -12,17 +12,25 @@ const printStatements = (statements?: SemanticStatement[], total?: number) => {
     
     const p = new Table({
         columns: [
-            { name: 'scope', alignment: 'left', maxLen: 10, minLen: 1 },
-            { name: 'statement', alignment: 'left', minLen: 40, maxLen: 40 },
-            { name: 'labels', alignment: 'left', minLen: 1, maxLen: 20 }
+            //{ name: 'id', alignment: 'left', maxLen: 10, minLen: 1 },
+            { name: 'scope', alignment: 'left', maxLen: 10},
+            { name: 'statement', alignment: 'left', maxLen: 40 },
+            { name: 'labels', alignment: 'left', maxLen: 10 },
+            { name: 'always_include', alignment: 'left', maxLen: 5 },
+            { name: 'lookup_summaries', alignment: 'left', maxLen: 10 },
+            { name: 'summarization_prompt', alignment: 'left', maxLen: 40 }
         ], rowSeparator: true
     });
 
     for (const stmt of statements) {
         p.addRow({
+            //id: stmt.id,
             scope: stmt.scope,
             statement: stmt.statement,
-            labels: stmt.labels
+            labels: stmt.labels,
+            always_include: stmt.always_include,
+            lookup_summaries: stmt.lookup_summaries,
+            summarization_prompt: stmt.summarization_prompt
         });
     }
     p.printTable();
@@ -79,7 +87,7 @@ const contextList = async (params: CmdParams) => {
             break;
         }
         default: {
-            printStatements(result.semantic_context, result.total_candidates);
+            printStatements(result.semantic_context, result.available_statements);
         }
     }
 }
@@ -133,18 +141,18 @@ const contextAddDoc = {
         scope: "The scope of the statement: [[[[<db>].<schema>].<table>].<column>]",
         labels: "Comma separated list of labels for the statement: 'performance, finance'",
         always_include: "Whether the statement should be dynamically selected by query or always included.",
-        search_keys: "Comma separated list of keys to use.",
-        extract_prompt: "Prompt to be used to extract information when the statement is used."
+        lookup_summaries: "Comma separated list of summaries to use.",
+        summarization_prompt: "Prompt to be used to extract information when the statement is used."
     }
 };
 const contextAdd = async (params: CmdParams) => {
     let stmt: SemanticStatement = new SemanticStatement(
         params.opts['scope'],
         params.vals[0],
-        params.opts['labels'].split(',').map((s) => s.trim()),
+        'labels' in params.opts ? params.opts['labels'].split(',').map((s) => s.trim()) : [],
         stringToBoolean(params.opts['always_include']),
-        params.opts['search_keys'].split(',').map((s) => s.trim()),
-        params.opts['extract_prompt']
+        'lookup_summaries' in params.opts ? params.opts['lookup_summaries'].split(',').map((s) => s.trim()) : [],
+        params.opts['summarization_prompt']
     );
 
     let result = await WAII.SemanticContext.modifySemanticContext(
