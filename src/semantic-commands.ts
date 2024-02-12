@@ -4,6 +4,24 @@ import { SemanticStatement } from "waii-sdk-js/dist/clients/semantic-context/src
 import { Table } from "console-table-printer";
 import { IIndexable } from "./query-commands";
 
+function processForTable(input: string | undefined, n: number): string {
+  
+    if (!input) {
+        return '';
+    }
+
+    let s = input.replace(/(\r\n|\n|\r)/gm, "").trim();
+    const words = s.split(/\s+/);
+    const processedWords = words.map(word => {
+      if (word.length > n) {
+        return word.substring(0, n) + '...';
+      }
+      return word;
+    });
+
+    return processedWords.join(' ');
+  }
+  
 const printStatements = (statements?: SemanticStatement[], total?: number) => {
     if (!statements) {
         console.log("No statements found.");
@@ -14,23 +32,23 @@ const printStatements = (statements?: SemanticStatement[], total?: number) => {
         columns: [
             //{ name: 'id', alignment: 'left', maxLen: 10, minLen: 1 },
             { name: 'scope', alignment: 'left', maxLen: 10},
-            { name: 'statement', alignment: 'left', maxLen: 40 },
-            { name: 'labels', alignment: 'left', maxLen: 10 },
-            { name: 'always_include', alignment: 'left', maxLen: 5 },
-            { name: 'lookup_summaries', alignment: 'left', maxLen: 10 },
-            { name: 'summarization_prompt', alignment: 'left', maxLen: 40 }
+            { name: 'statement', alignment: 'left', maxLen: 25},
+            { name: 'labels', alignment: 'left', maxLen: 10},
+            { name: 'always_include', alignment: 'left', maxLen: 5},
+            { name: 'lookup_summaries', alignment: 'left', maxLen: 10},
+            { name: 'summarization_prompt', alignment: 'left', maxLen: 20}
         ], rowSeparator: true
     });
 
     for (const stmt of statements) {
         p.addRow({
             //id: stmt.id,
-            scope: stmt.scope,
-            statement: stmt.statement,
-            labels: stmt.labels,
+            scope: processForTable(stmt.scope, 10),
+            statement: processForTable(stmt.statement, 25),
+            labels: processForTable(stmt.labels?.join(', '), 10),
             always_include: stmt.always_include,
-            lookup_summaries: stmt.lookup_summaries,
-            summarization_prompt: stmt.summarization_prompt
+            lookup_summaries: processForTable(stmt.lookup_summaries?.join(', '), 10),
+            summarization_prompt: processForTable(stmt.summarization_prompt, 20)
         });
     }
     p.printTable();
