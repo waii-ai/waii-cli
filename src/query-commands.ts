@@ -191,6 +191,53 @@ const queryRewrite = async (params: CmdParams) => {
     await queryUpdate(params);
 }
 
+const generateQuestionDoc = {
+    description: "Generate questions based on the database schema.",
+    parameters: [],
+    options: {
+        schema: "Name of the schema to generate questions for.",
+        complexity: "Complexity of the questions to generate: easy, medium, hard",
+        n_questions: "Number of questions to generate",
+        format: "choose the format of the response: text or json"
+    }
+};
+const generateQuestion = async (params: CmdParams) => {
+    // n questions will be 5 by default
+    let n_questions = 5;
+    if (params.opts['n_questions']) {
+        n_questions = parseInt(params.opts['n_questions']);
+    }
+
+    // complex will be medium by default
+    let complexity = "medium";
+    if (params.opts['complexity']) {
+        complexity = params.opts['complexity'];
+    }
+
+    // you mush provide a schema
+    if (!params.opts['schema']) {
+        throw new ArgumentError("You must provide a schema to generate questions for.");
+    }
+
+    WAII.Query.generateQuestion({
+        schema_name: params.opts['schema'],
+        n_questions: n_questions,
+        complexity: params.opts['complexity']
+    }).then((result) => {
+        if (params.opts['format'] === 'json') {
+            console.log(JSON.stringify(result, null, 2));
+        } else {
+            console.log("Questions: ");
+            console.log("----------");
+            for (let i = 0; !(result.questions) || i < result.questions.length; i++) {
+                if (result.questions) {
+                    console.log(result.questions[i].question + "\n");
+                }
+            }
+        }
+    })
+}
+
 const queryTranscodeDoc = {
     description: "Translate queries from one dialect to another, if multiple queries are provided, they will be converted one by one.",
     parameters: ["ask - you can specify additional instructions to translate the query, such as 'use the test schema for converted query'"],
@@ -476,7 +523,8 @@ const queryCommands = {
     transcode: { fn: queryTranscode, doc: queryTranscodeDoc },
     diff: { fn: queryDiff, doc: queryDiffDoc },
     run: { fn: queryRun, doc: queryRunDoc },
-    analyze: {fn: queryAnalyze, doc: queryAnalyzeDoc} 
+    analyze: {fn: queryAnalyze, doc: queryAnalyzeDoc},
+    generate_question: {fn: generateQuestion, doc: generateQuestionDoc}
 };
 
 export { queryCommands, printQuery }
