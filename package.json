@@ -1,6 +1,6 @@
 {
   "name": "waii-cli",
-  "version": "1.10.5",
+  "version": "1.11.0",
   "bin": {
     "waii": "dist/waii-cli.js"
   },
