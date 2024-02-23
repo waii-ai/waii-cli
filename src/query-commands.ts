@@ -245,14 +245,20 @@ const queryTranscodeDoc = {
     options: {
         format: "choose the format of the response: text or json",
         from: "choose the database backend to translate from: snowflake or postgres",
-        to: "choose the database backend to translate to: snowflake or postgres"
+        to: "choose the database backend to translate to: snowflake or postgres",
+        split_queries: "split the input into multiple queries and convert them one by one. Default is true."
     }
 };
 const queryTranscode = async (params: CmdParams) => {
     let from_dialect = params.opts['from']
     let to_dialect = params.opts['to'] ? params.opts['to'] : 'Snowflake';
     params.opts['dialect'] = to_dialect;
-    let sqls = await getAllSqlQueriesFromStr(params.input);
+    let split_multi_query = params.opts['split_queries'] ? params.opts['split_queries'] === 'true' : true;
+
+    let sqls = [params.input];
+    if (split_multi_query) {
+        sqls = await getAllSqlQueriesFromStr(params.input);
+    }
     for (let i = 0; i < sqls.length; i++) {
         params.input = sqls[i];
 
