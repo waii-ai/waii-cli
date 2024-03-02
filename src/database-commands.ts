@@ -669,11 +669,7 @@ const quoteNameIfNeeded = (name?: string): string | null => {
         return null;
     }
 
-    // mixed case or contains special characters [other than 0-9a-zA-Z_]
-    if (name.toLowerCase() !== name || /[^0-9a-zA-Z_]/.test(name)) {
-        return '"' + name + '"';
-    }
-    return name;
+    return '"' + name + '"';
 }
 
 const quoteTableNameIfNeeded = (name: TableName): string => {
