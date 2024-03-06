@@ -1,6 +1,6 @@
 import WAII from 'waii-sdk-js'
 import { CmdParams } from './cmd-line-parser';
-import { SemanticStatement } from "waii-sdk-js/dist/clients/semantic-context/src/SemanticContext";
+import { GetSemanticContextResponse, SemanticStatement } from "waii-sdk-js/dist/clients/semantic-context/src/SemanticContext";
 import { Table } from "console-table-printer";
 import { IIndexable } from "./query-commands";
 
@@ -63,6 +63,36 @@ function stringToBoolean(str: string): boolean {
     return /^(true|1|yes|y)$/i.test(str.trim());
 }
 
+async function load_context(spec: any):Promise<GetSemanticContextResponse> {
+    let remaining = 0;
+    
+    if (spec.limit > 1000) {
+        remaining = spec.limit - 1000;
+        spec.limit = 1000;
+    }
+
+    let result = await WAII.SemanticContext.getSemanticContext(spec);
+    if (!result.available_statements) {
+        remaining = 0;
+    } else {
+        if (remaining > result.available_statements - 1000) {
+            remaining = result.available_statements - 1000;
+        }
+    }
+
+    if (remaining < 0) {
+        remaining = 0;
+    }
+
+    while (remaining > 0) {
+        let more = await WAII.SemanticContext.getSemanticContext(spec);
+        result.semantic_context = [...(result.semantic_context ? result.semantic_context:[]), ...(more.semantic_context ? more.semantic_context : [])];
+        remaining -= 1000;
+    }
+
+    return result;
+}
+
 const contextListDoc = {
     description: "List all semantic context of the current database.",
     parameters: [],
@@ -77,27 +107,25 @@ const contextListDoc = {
 };
 const contextList = async (params: CmdParams) => {
 
-    let always_include: boolean = 'always_include' in params.opts ? stringToBoolean(params.opts['always_include']) : false;
+    let always_include: boolean | null = 'always_include' in params.opts ? stringToBoolean(params.opts['always_include']) : null;
     let search: string = 'search' in params.opts ? params.opts['search'] : '';
     let offset: number = 'offset' in params.opts ? +params.opts['offset'] : 0;
     let limit: number = 'limit' in params.opts ? +params.opts['limit'] : 100;
 
-    let spec = {
-        filter: {
-            always_include: always_include
-        },
+    let spec: any = {
         search_text: search,
         offset: offset,
         limit: limit
     };
 
-    let result = await WAII.SemanticContext.getSemanticContext(spec);
-    
-    // filter result to only show the statements which has id != null
-    let filteredResult = []
-    if (result.semantic_context !== undefined) {
-        result.semantic_context = result.semantic_context.filter((stmt: SemanticStatement) => stmt.id !== null);
+    if (always_include !== null) {
+        let filter = {
+            always_include: always_include
+        };
+        spec.filter = filter;
     }
+    
+    let result = await load_context(spec);
 
     switch (params.opts['format']) {
         case 'json': {
@@ -105,7 +133,7 @@ const contextList = async (params: CmdParams) => {
             break;
         }
         default: {
-            printStatements(result.semantic_context, result.available_statements);
+            printStatements(result?.semantic_context, result?.available_statements);
         }
     }
 }
@@ -118,7 +146,9 @@ const contextImportDoc = {
     }
 };
 const contextImport = async (params: CmdParams) => {
-    let context = await WAII.SemanticContext.getSemanticContext();
+    let context = await load_context({limit: 1});
+    context = await load_context({limit: context.available_statements});
+
     let importContext = JSON.parse(params.input);
     let totalCounter = 0;
     let importCounter = 0;
@@ -136,7 +166,11 @@ const contextImport = async (params: CmdParams) => {
             if (!found) {
                 let newStatement: SemanticStatement = new SemanticStatement(
                     stmt.scope,
-                    stmt.statement
+                    stmt.statement,
+                    stmt.labels,
+                    stmt.always_include,
+                    stmt.lookup_summaries,
+                    stmt.summarization_prompt,
                 );
                 let result = await WAII.SemanticContext.modifySemanticContext(
                     {
