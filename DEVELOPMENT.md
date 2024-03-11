@@ -32,7 +32,7 @@ For example, for command `waii database list`, you need to run `node . database 
 
 ## Test with local changes from `waii-sdk-js`
 
-It is possible that you amde some changes in`waii-sdk-js`, and want to test the changes in `waii-cli` before publishing the changes to npm.
+It is possible that you made some changes in`waii-sdk-js`, and want to test the changes in `waii-cli` before publishing the changes to npm.
 
 To do so, you need to run `tsc && npm pack` inside the `waii-sdk-js` folder. After that, you need to run
 1. `npm uninstall waii-sdk-js` and
