@@ -246,18 +246,19 @@ const queryTranscodeDoc = {
         format: "choose the format of the response: text or json",
         from: "choose the database backend to translate from: snowflake or postgres",
         to: "choose the database backend to translate to: snowflake or postgres",
-        split_queries: "split the input into multiple queries and convert them one by one. Default is true."
+        split_queries: "split the input into multiple queries and convert them one by one. Default is true.",
     }
 };
 const queryTranscode = async (params: CmdParams) => {
-    let from_dialect = params.opts['from']
+    let from_dialect = params.opts['from'];
     let to_dialect = params.opts['to'] ? params.opts['to'] : 'Snowflake';
     params.opts['dialect'] = to_dialect;
     let split_multi_query = params.opts['split_queries'] ? params.opts['split_queries'] === 'true' : true;
-
-    let sqls = [params.input];
+    let sqls = [];
     if (split_multi_query) {
         sqls = await getAllSqlQueriesFromStr(params.input);
+    } else {
+        sqls = await removeSqlCommentsFromStr(params.input);
     }
     for (let i = 0; i < sqls.length; i++) {
         params.input = sqls[i];
@@ -268,12 +269,20 @@ const queryTranscode = async (params: CmdParams) => {
             source_dialect: from_dialect,
             source_query: params.input
         });
-
         if (i < sqls.length - 1) {
-            console.log("--\n")
+            console.log("--\n");
         }
-        printQuery(genResult.query)
+        printQuery(genResult.query);
     }
+}
+
+const removeSqlCommentsFromStr = async (input: string) => {
+        // Remove lines that start with --
+        const cleanedInput = input.split('\n')
+            .filter(line => !line.trim().startsWith('--'))
+            .join('\n');
+
+        return [cleanedInput];
 }
 
 const getAllSqlQueriesFromStr = async (input: string) => {
