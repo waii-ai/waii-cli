@@ -3,6 +3,7 @@ import { ArgumentError, CmdParams } from './cmd-line-parser';
 import { js_beautify } from 'js-beautify';
 import { Table } from 'console-table-printer';
 import { TableName, SchemaName } from "waii-sdk-js/dist/clients/database/src/Database";
+import { DescribeJoinGraph } from "waii-sdk-js/dist/clients/query/src/Query"
 import { highlight } from "cli-highlight";
 
 export interface IIndexable {
@@ -104,6 +105,24 @@ const log_query_explain_result = (result: any) => {
 
     console.log("\nSteps: \n------");
     console.log((result.detailed_steps ? result.detailed_steps : []).join('\n\n'));
+
+    if (result.join_graphs) {
+        result.join_graphs.forEach((joinGraph: DescribeJoinGraph, index: number) => {
+            console.log(`Join Graph ${index + 1}:`);
+            console.log("Fact Table:", joinGraph.fact_table);
+            console.log("Fact Table expressions:", joinGraph.expressions);
+
+            console.log("Joins:");
+            joinGraph.joins.forEach((join) => {
+                console.log(`- ${join.table} => ${join.join_expression}`);
+                console.log(`- ${join.expressions}`);
+
+            });
+            console.log("\n");
+        });
+    } else {
+        console.log("No Join Graphs found.");
+    }
 }
 
 const queryExplainDoc = {
