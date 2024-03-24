@@ -589,10 +589,10 @@ v8-compile-cache-lib@^3.0.1:
   resolved "https://registry.npmjs.org/v8-compile-cache-lib/-/v8-compile-cache-lib-3.0.1.tgz"
   integrity sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==
 
-waii-sdk-js@^1.12.4:
-  version "1.12.4"
-  resolved "https://registry.npmjs.org/waii-sdk-js/-/waii-sdk-js-1.12.4.tgz"
-  integrity sha512-xQQEe5wC8Cmiqo0wcRG9UsVuFHCv/YZjtVnU21wnOiHsSs6woiWB/CjCG8FNzVBQC51M6DzwyIAG8C/DaPKhyA==
+waii-sdk-js@^1.12.5:
+  version "1.12.5"
+  resolved "https://registry.npmjs.org/waii-sdk-js/-/waii-sdk-js-1.12.5.tgz"
+  integrity sha512-cHF2j6UHk5LCrlUDoy4z+K/pccTEkLB1VRKejktkxgnLfVDK0jP6GDMKJHDdaGoMlK0pEQ784hISDrtT4UMk2Q==
   dependencies:
     js-yaml "^4.1.0"
     uuid "^9.0.0"

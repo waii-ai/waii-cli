@@ -171,6 +171,7 @@ const contextImport = async (params: CmdParams) => {
                     stmt.always_include,
                     stmt.lookup_summaries,
                     stmt.summarization_prompt,
+                    stmt.id
                 );
                 let result = await WAII.SemanticContext.modifySemanticContext(
                     {
@@ -247,11 +248,61 @@ const contextDelete = async (params: CmdParams) => {
     }
 }
 
+const contextDeleteAllDoc = {
+    description: "Delete all added semantic contexts from the database",
+    stdin: ""
+};
+const contextDeleteAll = async (params: CmdParams) => {
+    // first print a warning and ask user to confirm the deletion, type 'yes' to confirm
+    console.log("Warning: This will delete all added semantic contexts from the database.");
+    console.log("Type 'yes' to confirm deletion:");
+    let input = await new Promise<string>((resolve) => {
+        process.stdin.once('data', (data) => {
+            resolve(data.toString().trim());
+        });
+    });
+    if (input !== 'yes') {
+        console.log("Aborted..");
+        return;
+    }
+
+    while (true) {
+        let all_contexts = await WAII.SemanticContext.getSemanticContext({});
+        if (!all_contexts.semantic_context) {
+            break;
+        }
+
+        let all_contexts_ids = []
+        for (const stmt of all_contexts.semantic_context) {
+            if (stmt.id) {
+                all_contexts_ids.push(stmt.id);
+            }
+        }
+
+        if (all_contexts.semantic_context && all_contexts.semantic_context.length > 0) {
+            let result = await WAII.SemanticContext.modifySemanticContext({
+                updated: [],
+                deleted: all_contexts_ids
+            });
+
+            if (result.deleted && result.deleted.length > 0) {
+                console.log("Deleted ", result.deleted.length, " statement(s)");
+            } else {
+                console.log("No statements left to delete");
+                return
+            }
+        } else {
+            break;
+        }
+    }
+}
+
 const semanticCommands = {
     list: { fn: contextList, doc: contextListDoc },
     add: { fn: contextAdd, doc: contextAddDoc },
     delete: { fn: contextDelete, doc: contextDeleteDoc },
-    import: { fn: contextImport, doc: contextImportDoc }
+    import: { fn: contextImport, doc: contextImportDoc },
+    delete_all: { fn: contextDeleteAll, doc: contextDeleteAllDoc }
 };
 
 export { semanticCommands };
