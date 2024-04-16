@@ -2,7 +2,7 @@ const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
 (module.exports = {
-    title: 'Waii Pythont SDK',
+    title: 'Waii CLI',
     tagline: 'World most accurate text-2-sql API',
     url: 'https://docs.waii.ai',
     baseUrl: '/',
@@ -10,7 +10,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
     onBrokenMarkdownLinks: 'warn',
     favicon: 'img/favicon.ico',
     organizationName: 'waii',
-    projectName: 'waii-sdk-py',
+    projectName: 'waii-cli',
     
     presets: [
 	[
@@ -18,7 +18,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 	    ({
 		docs: {
 		    sidebarPath: require.resolve('./sidebars.js'),
-		    editUrl: 'https://github.com/waii-ai/waii-sdk-js/tree/main/docs/docs-waii-sdk-py',
+		    editUrl: 'https://github.com/waii-ai/waii-sdk-js/tree/main/docs/docs-waii-cli',
 		},
 		theme: {
 		    customCss: require.resolve('./src/css/custom.css'),
@@ -30,7 +30,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
     themeConfig:
     ({
 	navbar: {
-            title: 'Waii Python SDK',
+            title: 'Waii CLI',
             logo: {
 		alt: 'Waii Logo',
 		src: 'img/logo.png',
@@ -87,7 +87,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 		    items: [
 			{
 			    label: 'GitHub',
-			    href: 'https://github.com/waii-ai/waii-sdk-py',
+			    href: 'https://github.com/waii-ai/waii-cli',
 			},
 		    ],
 		},
