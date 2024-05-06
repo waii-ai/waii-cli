@@ -5,7 +5,7 @@ type CmdParams = {
     cmd: string,
     scmd: string,
     vals: string[],
-    opts: { [key: string]: string },
+    opts: { [key: string]: any },
     input: string
 }
 
@@ -71,11 +71,16 @@ const parseInput = async (args: string[]) => {
     }
 
     for (const f of flags) {
-        let cnt = 1;
-        if (f.flag.startsWith('--')) {
-            cnt = 2;
+        const flagKey = f.flag.slice(f.flag.startsWith('--') ? 2 : 1);
+
+        if (params.opts[flagKey]) {
+            if (!Array.isArray(params.opts[flagKey])) {
+                params.opts[flagKey] = [params.opts[flagKey]];
+            }
+            params.opts[flagKey].push(f.value);
+        } else {
+            params.opts[flagKey] = f.value
         }
-        params.opts[f.flag.slice(cnt)] = f.value;
     }
 
     if (process.stdin.isTTY) {

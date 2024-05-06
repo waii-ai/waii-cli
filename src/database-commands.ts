@@ -1,9 +1,13 @@
 import WAII from 'waii-sdk-js'
-import {Schema, SchemaDescription, SchemaName, TableName} from 'waii-sdk-js/dist/clients/database/src/Database';
+import {
+    DBContentFilterActionType,
+    Schema,
+    SchemaName,
+    TableName
+} from 'waii-sdk-js/dist/clients/database/src/Database';
 import {
     DBConnection,
     DBConnectionIndexingStatus,
-    SchemaIndexingStatus,
     DBContentFilter,
     DBContentFilterScope,
     DBContentFilterType
@@ -214,9 +218,35 @@ const databaseAddDoc = {
         no_column_samples: "if set, will not sample columns",
         exclude_columns: "don't index columns matching this pattern",
         exclude_tables: "don't index tables matching this pattern",
-        exclude_schemas: "don't index schemas matching this pattern"
+        exclude_schemas: "don't index schemas matching this pattern",
+        exclude_columns_for_sampling: "don't sample columns matching this pattern",
+        exclude_tables_for_sampling: "don't sample tables matching this pattern",
+        exclude_schemas_for_sampling: "don't sample schemas matching this pattern",
     }
 };
+
+const _addColFilterForSampling = (filters: DBContentFilter[], params: CmdParams, opt_name: string, filter_scope: DBContentFilterScope) => {
+    if (params.opts[opt_name]) {
+        let excluded_cols = []
+
+        if (!Array.isArray(params.opts[opt_name])) {
+            excluded_cols.push(params.opts[opt_name])
+        } else {
+            excluded_cols = params.opts[opt_name]
+        }
+
+        for (let pattern of excluded_cols) {
+            filters.push({
+                filter_scope: filter_scope,
+                filter_type: DBContentFilterType.exclude,
+                ignore_case: true,
+                pattern: pattern,
+                filter_action_type: DBContentFilterActionType.sample_values
+            })
+        }
+    }
+}
+
 const databaseAdd = async (params: CmdParams) => {
     let parameters = {
         config_file: undefined
@@ -252,6 +282,10 @@ const databaseAdd = async (params: CmdParams) => {
 
         })
     }
+
+    _addColFilterForSampling(filters, params, 'exclude_columns_for_sampling', DBContentFilterScope.column)
+    _addColFilterForSampling(filters, params, 'exclude_tables_for_sampling', DBContentFilterScope.table)
+    _addColFilterForSampling(filters, params, 'exclude_schemas_for_sampling', DBContentFilterScope.schema)
 
     let connect_string = params.opts['connect_string']
     if (connect_string) {

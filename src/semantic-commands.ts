@@ -202,9 +202,9 @@ const contextAdd = async (params: CmdParams) => {
     let stmt: SemanticStatement = new SemanticStatement(
         params.opts['scope'],
         params.vals[0],
-        'labels' in params.opts ? params.opts['labels'].split(',').map((s) => s.trim()) : [],
+        'labels' in params.opts ? params.opts['labels'].split(',').map((s: string) => s.trim()) : [],
         stringToBoolean(params.opts['always_include']),
-        'lookup_summaries' in params.opts ? params.opts['lookup_summaries'].split(',').map((s) => s.trim()) : [],
+        'lookup_summaries' in params.opts ? params.opts['lookup_summaries'].split(',').map((s: string) => s.trim()) : [],
         params.opts['summarization_prompt']
     );
 
