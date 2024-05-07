@@ -260,3 +260,27 @@ cc_call_center_id
 ------------------------------------------------------------
 <...More Generated Queries ...>
 ```
+
+#### Extract documentations from web page / txt file, etc.
+
+You may want to extract the documentation from a web page or a text file. You can use the following command to extract the documentation from a web page:
+
+```bash
+# Extract documentation from a web page, and update the database
+waii database extract_doc --url "https://fleetdm.com/tables/chrome_extensions" --update true
+
+# Extract documentation from a local text file, and display the documentation in the console
+waii database extract_doc --file "path/to/file.txt" --doc_type text --update false
+
+# Extract a html page from local file, and update the database
+waii database extract_doc --file "path/to/file.html" --doc_type html --update true
+```
+
+Options: 
+- `--file` : The URL of the web page or the path to the text file.
+- `--doc_type`: The type of the documentation (only applies to `file`). It can be `html`, `text`. Default is `text`.
+- `--url` : The URL of the web page. (Note that you can only use `--file` or `--url` at a time)
+- `--update` : If set to `true`, the extracted documentation will be updated in the database. If set to `false`, the extracted documentation will be displayed in the console.
+- `--tables` : The name of the tables where the documentation will be mapped to. By default we will search all the tables in the database.
+- `--schemas` : The name of the schemas where the documentation will be mapped to. By default we will search all the schemas in the database.
+

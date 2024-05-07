@@ -1,8 +1,8 @@
 import WAII from 'waii-sdk-js'
 import {
-    DBContentFilterActionType,
+    DBContentFilterActionType, DocumentContentType,
     Schema,
-    SchemaName,
+    SchemaName, SearchContext,
     TableName
 } from 'waii-sdk-js/dist/clients/database/src/Database';
 import {
@@ -15,6 +15,7 @@ import {
 import { ArgumentError, CmdParams } from './cmd-line-parser';
 import { queryCommands } from './query-commands';
 import { Table } from 'console-table-printer';
+import SemanticContext, {SemanticStatement} from "waii-sdk-js/dist/clients/semantic-context/src/SemanticContext";
 
 const printConnectionSelector = (connectors?: DBConnection[]) => {
     let defaultScope = WAII.Database.getDefaultConnection();
@@ -509,6 +510,129 @@ const databaseDescribe = async (params: CmdParams) => {
     }
 }
 
+const extractDoc = {
+    description: "Extract database documentation.",
+    parameters: [],
+    stdin: "",
+    options: {
+        url: "Web URL to extract documentation from.",
+        file: "File path to extract documentation from.",
+        doc_type: "Content type of the file, text/html, etc.",
+        schemas: "Comma separated list of schemas to extract documentation from. If not provided, will search in all schemas.",
+        tables: "Comma separated list of tables to extract documentation from. If schema is not provided, will search in all tables.",
+        update: "If set to true, will update the existing semantic context, default is false.",
+    }
+}
+
+const extractDocFn = async (params: CmdParams) => {
+    // check if url or file is provided, and only one of them
+    if (!params.opts['url'] && !params.opts['file']) {
+        throw new Error("url or file is required.");
+    }
+    if (params.opts['url'] && params.opts['file']) {
+        throw new Error("only one of url or file is allowed.");
+    }
+
+    // read the content from file
+    let content = params.opts['file'] ? require('fs').readFileSync(params.opts['file'], 'utf8') : undefined;
+
+    // read the limited schemas and tables
+    let schemas = []
+    let tables = []
+    if (params.opts['schemas']) {
+        schemas = params.opts['schemas'].split(',');
+        // trim it
+        schemas = schemas.map((s: string) => s.trim())
+    }
+    if (params.opts['tables']) {
+        tables = params.opts['tables'].split(',');
+        // trim it
+        tables = tables.map((t: string) => t.trim())
+    }
+
+    let doc_type: DocumentContentType = DocumentContentType.text;
+    if (params.opts['doc_type']) {
+        doc_type = params.opts['doc_type'] as DocumentContentType;
+    }
+
+    // create search context
+    let search_context: SearchContext[] = []
+    if (schemas.length > 0) {
+        for (const s of schemas) {
+            search_context.push({
+                schema_name: s
+            })
+        }
+    }
+    if (tables.length > 0) {
+        for (const t of tables) {
+            search_context.push({
+                table_name: t
+            })
+        }
+    }
+
+    let result = await WAII.Database.extractDatabaseDocumentation({
+        url: params.opts['url'],
+        content: content,
+        search_context: search_context,
+        content_type: doc_type
+    });
+
+    // convert to semantic context
+    let doc = result.database_documentation;
+
+    let semanticStatements: SemanticStatement[] = []
+
+    for (const schema of doc.schemas || []) {
+        let schema_name = schema.schema_name.schema_name;
+        let schema_doc = schema.documentation;
+        if (schema_name && schema_doc) {
+            semanticStatements.push({
+                scope: quoteSchemaNameIfNeeded(schema.schema_name),
+                statement: schema_doc,
+                always_include: true
+            });
+        }
+
+        for (const table of schema.tables || []) {
+            if (table.table_name) {
+                let fullyQualifiedTableName = quoteTableNameIfNeeded(table.table_name);
+                if (table.documentation) {
+                    semanticStatements.push({
+                        scope: fullyQualifiedTableName,
+                        statement: table.documentation,
+                        always_include: true
+                    });
+
+                    for (const column of table.columns || []) {
+                        if (column.documentation) {
+                            semanticStatements.push({
+                                scope: fullyQualifiedTableName + "." + column.name,
+                                statement: column.documentation,
+                                always_include: true
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (params.opts['update']) {
+        let updateResult = await WAII.SemanticContext.modifySemanticContext({
+            updated: semanticStatements
+        });
+        let n_updated = 0
+        if (updateResult.updated) {
+            n_updated = updateResult.updated.length || 0
+        }
+        console.log(`Updated ${n_updated} semantic statements.`);
+    } else {
+        console.log(JSON.stringify(semanticStatements, null, 2));
+    }
+}
+
 const schemaListDoc = {
     description: "Show all available schemas.",
     parameters: [],
@@ -698,12 +822,39 @@ const tableList = async (params: CmdParams) => {
     }
 }
 
+function noQuoteNeeded(identifier: string, includeLowerCases: boolean = true): boolean {
+    // If already quoted, no need to quote again
+    if (identifier.startsWith('"') && identifier.endsWith('"')) {
+        return true;
+    }
+
+    // Regex to check uppercase identifiers
+    let matched = /^[A-Z_][A-Z_0-9$]*$/.test(identifier);
+    if (matched) {
+        return true;
+    }
+
+    // Check lowercase identifiers if includeLowerCases is true
+    if (includeLowerCases) {
+        matched = /^[a-z_][a-z_0-9$]*$/.test(identifier);
+        if (matched) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 const quoteNameIfNeeded = (name?: string): string | null => {
     if (!name) {
         return null;
     }
 
-    return '"' + name + '"';
+    if (noQuoteNeeded(name, false)) {
+        return name;
+    } else {
+        return '"' + name + '"';
+    }
 }
 
 const quoteTableNameIfNeeded = (name: TableName): string => {
@@ -1210,7 +1361,8 @@ const databaseCommands = {
     add: { fn: databaseAdd, doc: databaseAddDoc },
     delete: { fn: databaseDelete, doc: databaseDeleteDoc },
     activate: { fn: databaseActivate, doc: databaseActivateDoc },
-    describe: { fn: databaseDescribe, doc: databaseDescribeDoc }
+    describe: { fn: databaseDescribe, doc: databaseDescribeDoc },
+    extract_doc: { fn: extractDocFn, doc: extractDoc }
 };
 
 const schemaCommands = {
