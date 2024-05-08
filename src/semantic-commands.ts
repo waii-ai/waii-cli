@@ -64,30 +64,33 @@ function stringToBoolean(str: string): boolean {
 }
 
 async function load_context(spec: any):Promise<GetSemanticContextResponse> {
-    let remaining = 0;
-    
-    if (spec.limit > 1000) {
-        remaining = spec.limit - 1000;
-        spec.limit = 1000;
-    }
+    let remaining = spec.limit;
 
+    // first try to load limit 0 to get the total number of statements
+    spec.limit = 0
     let result = await WAII.SemanticContext.getSemanticContext(spec);
-    if (!result.available_statements) {
-        remaining = 0;
-    } else {
-        if (remaining > result.available_statements - 1000) {
-            remaining = result.available_statements - 1000;
-        }
-    }
 
-    if (remaining < 0) {
-        remaining = 0;
+    // we won't load more than total available statements
+    let total_available = result.available_statements ? result.available_statements : 0;
+    if (total_available < remaining) {
+        remaining = total_available;
     }
 
     while (remaining > 0) {
-        let more = await WAII.SemanticContext.getSemanticContext(spec);
-        result.semantic_context = [...(result.semantic_context ? result.semantic_context:[]), ...(more.semantic_context ? more.semantic_context : [])];
-        remaining -= 1000;
+        spec.limit = Math.min(remaining, 1000);
+        let batch_result = await WAII.SemanticContext.getSemanticContext(spec);
+        if (batch_result.semantic_context && batch_result.semantic_context.length > 0) {
+            // append the batch results to the final result
+            result.semantic_context = [...(result.semantic_context ? result.semantic_context : []), ...(batch_result.semantic_context ? batch_result.semantic_context : [])];
+
+            remaining -= batch_result.semantic_context.length;
+            spec.offset += batch_result.semantic_context.length;
+
+            console.log("Loaded ", batch_result.semantic_context.length, " statement(s), ", remaining, " remaining");
+        } else {
+            // no more statements to load
+            break;
+        }
     }
 
     return result;
@@ -102,7 +105,7 @@ const contextListDoc = {
         offset: "Which statement to start with",
         search: "Which string to search for in the statements",
         always_include: "Filter that decides which type of statement to fetch",
-        format: "Choose the format of the response: text or json.",
+        format: "Choose the format of the response: text or json."
     }
 };
 const contextList = async (params: CmdParams) => {
