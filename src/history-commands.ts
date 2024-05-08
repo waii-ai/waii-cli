@@ -10,11 +10,21 @@ import { printQuery } from "./query-commands";
  *
  * @param history
  */
-const printHistory = (history: GeneratedQueryHistoryEntry[], limit: number) => {
+const printHistory = (history: GeneratedQueryHistoryEntry[], limit: number, liked: boolean) => {
     // filter out entries with empty query
-    history = history.filter((entry) => {
-        return entry.query
-    })
+    if (liked) {
+        history = history.filter((entry) => {
+            if (entry.query && entry.query.liked) {
+                return entry.query
+            }
+            return false
+        })
+    }
+    else {
+        history = history.filter((entry) => {
+            return entry.query
+        })
+    }
 
     history.sort((a, b) => {
         // @ts-ignore
@@ -79,13 +89,23 @@ const historyListDoc = {
     stdin: "",
     options: {
         format: "choose the format of the response: text or json.",
-        limit: "choose how many items to list."
+        limit: "choose how many items to list.",
+        liked: "only display liked queries"
     }
 };
+
+function stringToBoolean(str: string) {
+    return /^(true|1|yes|y)$/i.test(str.trim());
+}
+
 const historyList = async (params: CmdParams) => {
     let limit = 10
     if (params.opts['limit']) {
         limit = parseInt(params.opts['limit'])
+    }
+    let liked = false
+    if (params.opts['liked']) {
+        liked = stringToBoolean(params.opts['liked'])
     }
 
     let result = await WAII.History.list();
@@ -98,7 +118,7 @@ const historyList = async (params: CmdParams) => {
             if (!result.history) {
                 throw new Error("No history found.");
             }
-            printHistory(result.history, limit);
+            printHistory(result.history, limit, liked);
         }
     }
 }
