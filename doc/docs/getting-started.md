@@ -284,3 +284,17 @@ Options:
 - `--tables` : The name of the tables where the documentation will be mapped to. By default we will search all the tables in the database.
 - `--schemas` : The name of the schemas where the documentation will be mapped to. By default we will search all the schemas in the database.
 
+#### Add database connection
+
+Add a snowflake database.
+
+```bash
+waii database add --account 'xxxxx-yyyyy' --db '<DB>' --warehouse '<COMPUTE_WH>' --role '<YOUR_SNOWFLAKE_ROLE>' --user '<YOUR_SNOWFLAKE_USER>' --pass '********'
+```
+
+Other parameters: 
+- `no_column_samples`: If set to `true`, the column samples will not be fetched. Default is `false`.
+  - You can also use `exclude_columns_for_sampling`, `exclude_tables_for_sampling`, `exclude_schemas_for_sampling` to exclude some tables, columns, schemas from sampling.
+  - You can add multiple patterns, e.g.
+    - `--exclude_columns_for_sampling ".*name.*" --exclude_columns_for_sampling ".*bio.*" --exclude_columns_for_sampling ".*year" --exclude_tables_for_sampling "tv_series"`
+    - It will exclude all columns contain `name`, `bio`, `year` in their names, and exclude table `tv_series`.
