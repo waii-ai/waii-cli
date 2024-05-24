@@ -21,11 +21,19 @@ title: CLI Commands
 - delete: Delete a database connection.
 - activate: Sets a specific database as the active working database.
 - describe: Describes the structure and metadata of a specified database.
+- extract_doc: Extract database documentation.
 
 #### context:
 - list: Lists the current semantic context.
 - add: Adds a new statement to the semantic context.
 - delete: Removes a statement from the semantic context.
+- delete_all: Delete all added semantic contexts from the database.
+
+#### schema:
+- describe: Show the details of a schema.
+- list: Show all available schemas.
+- update: Update the textual description of a schema.
+- update_summary: Update the textual summary of a schema.
 
 #### history:
 - list: Displays a list of recent SQL commands and queries.
