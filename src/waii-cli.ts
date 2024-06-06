@@ -87,6 +87,13 @@ const callTree = {
     history: historyCommands
 };
 
+function checkNodeVersion(requiredVersion: number): boolean {
+    const currentVersion = process.version;
+    const majorVersion = parseInt(currentVersion.split('.')[0].slice(1)); 
+  
+    return majorVersion >= requiredVersion; 
+}
+  
 const initialize = async () => {
     let configPath = process.env.HOME + CONF_FILE.slice(1);
 
@@ -136,6 +143,11 @@ const initialize = async () => {
 
 const main = async () => {
     try {
+        const requiredNodeVersion = 18;
+        if (!checkNodeVersion(requiredNodeVersion)) {
+            console.error(`Your Node.js version is too low. This application requires Node.js v${requiredNodeVersion} or higher.`);
+            process.exit(1);
+        }    
         let params = await parseInput(process.argv);
         if (params.cmd === 'help') {
             help(params.scmd, params.vals[0]);
