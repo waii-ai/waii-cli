@@ -1042,19 +1042,18 @@ const updateTableDescription = async (params: CmdParams) => {
     }
 
     // use "." to split table_name into db_name, schema_name and table_name
-    let arr = table_name.split(".");
-    if (arr.length != 3) {
-        throw new Error("table_name should be <db_name>.<schema_name>.<table_name>");
-    }
+    const arr = table_name.split(".");
 
-    await WAII.Database.updateTableDescription({
-        description: description,
-        table_name: {
-            table_name: arr[2],
-            schema_name: arr[1],
-            database_name: arr[0]
-        }
-    })
+    if (arr.length === 1) throw new Error("Invalid table name format.");
+    
+    const updateTableDescPayload = {
+      description,
+      table_name: arr.length === 2
+        ? { schema_name: arr[0], table_name: arr[1] }
+        : { database_name: arr[0], schema_name: arr[1], table_name: arr[2] }
+    };
+    
+    await WAII.Database.updateTableDescription(updateTableDescPayload);
 }
 
 const schemaUpdateDescriptionDoc = {
