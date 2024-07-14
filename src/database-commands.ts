@@ -629,7 +629,10 @@ const extractDocFn = async (params: CmdParams) => {
         }
         console.log(`Updated ${n_updated} semantic statements.`);
     } else {
-        console.log(JSON.stringify(semanticStatements, null, 2));
+        // print the semantic context, enclose it in semantic_context so it can be used in import
+        console.log(JSON.stringify({
+            semantic_context: semanticStatements
+        }, null, 2));
     }
 }
 
