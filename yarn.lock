@@ -567,11 +567,6 @@ undici-types@~5.26.4:
   resolved "https://registry.npmjs.org/undici-types/-/undici-types-5.26.5.tgz"
   integrity sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==
 
-undici@^6.7.1:
-  version "6.9.0"
-  resolved "https://registry.npmjs.org/undici/-/undici-6.9.0.tgz"
-  integrity sha512-XPWfXzJedevUziHwun70EKNvGnxv4CnfraFZ4f/JV01+fcvMYzHE26r/j8AY/9c/70nkN4B1zX7E2Oyuqwz4+Q==
-
 uri-js@^4.4.1:
   version "4.4.1"
   resolved "https://registry.npmjs.org/uri-js/-/uri-js-4.4.1.tgz"
@@ -589,10 +584,10 @@ v8-compile-cache-lib@^3.0.1:
   resolved "https://registry.npmjs.org/v8-compile-cache-lib/-/v8-compile-cache-lib-3.0.1.tgz"
   integrity sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==
 
-waii-sdk-js@^1.13.4:
-  version "1.13.4"
-  resolved "https://registry.npmjs.org/waii-sdk-js/-/waii-sdk-js-1.13.4.tgz"
-  integrity sha512-D6Usm5lhfgr0YCSkwHgQ6KzX5RX0V6Gg8oUH5nTbA0k4SglOlpXhzoyYjIXr0YhAXj+yQHk7Dusq+7AkqjhstA==
+waii-sdk-js@^1.19.0:
+  version "1.19.0"
+  resolved "https://registry.npmjs.org/waii-sdk-js/-/waii-sdk-js-1.19.0.tgz"
+  integrity sha512-4J55DVjf4TaMC0Cxk37ORg+vOV5Xf6LHbViFBb6euV/zREnavPtIabIG4p6MNQZmoauyrQMchA1ipVtNi5c8eQ==
   dependencies:
     js-yaml "^4.1.0"
     uuid "^9.0.0"
