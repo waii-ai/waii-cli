@@ -10,7 +10,6 @@ import { databaseCommands, schemaCommands, tableCommands } from "./database-comm
 import { queryCommands } from "./query-commands";
 import { semanticCommands } from "./semantic-commands";
 import { historyCommands } from './history-commands';
-import {setGlobalDispatcher, Agent, fetch} from "undici";
 
 const CONF_FILE = '~/.waii/conf.yaml';
 const DEFAULT_API_KEY_IN_TEMPLATE = '<your_waii_api_key_here>'
@@ -122,16 +121,7 @@ const initialize = async () => {
         throw Error("Please provide your Waii API key in the config file: " + configPath)
     }
 
-    // set global dispatcher for undici fetch function, to avoid timeout issues
-    setGlobalDispatcher(new Agent({
-            connectTimeout: 6000_000,
-            headersTimeout: 6000_000,
-            bodyTimeout: 6000_000,
-            keepAliveTimeout: 6000_000
-    }));
-
-    // pass the fetch function to the WAII client to avoid timeout issues
-    WAII.initialize(config.url, config.apiKey, fetch);
+    WAII.initialize(config.url, config.apiKey);
     let result = await WAII.Database.getConnections({});
 
     if (result.default_db_connection_key) {

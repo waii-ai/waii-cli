@@ -28,9 +28,8 @@
     "ts-node": "^10.9.1",
     "uri-js": "^4.4.1",
     "uuid": "^9.0.0",
-    "waii-sdk-js": "^1.13.4",
-    "yaml": "^2.3.1",
-    "undici": "^6.7.1"
+    "waii-sdk-js": "^1.19.0",
+    "yaml": "^2.3.1"
   },
   "devDependencies": {
     "why-is-node-running": "^2.2.2"
