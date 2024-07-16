@@ -135,7 +135,7 @@ const main = async () => {
     try {
         const requiredNodeVersion = 18;
         if (!checkNodeVersion(requiredNodeVersion)) {
-            console.error(`Your Node.js version is too low. This application requires Node.js v${requiredNodeVersion} or higher.`);
+            console.error(`Your Node.js version is ${process.version}. This application requires Node.js v${requiredNodeVersion} or higher.`);
             process.exit(1);
         }    
         let params = await parseInput(process.argv);
