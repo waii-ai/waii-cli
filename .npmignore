@@ -20,4 +20,6 @@ src/*
 lib/*
 clients/*
 node_modules/*
+docs/*
+doc/*
 waii-cli-*.*.*.tgz
