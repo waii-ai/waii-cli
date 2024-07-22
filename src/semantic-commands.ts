@@ -70,6 +70,10 @@ async function load_context(spec: any):Promise<GetSemanticContextResponse> {
     spec.limit = 0
     let result = await WAII.SemanticContext.getSemanticContext(spec);
 
+    if (spec.offset == null) {
+        spec.offset = 0;
+    }
+
     // we won't load more than total available statements
     let total_available = result.available_statements ? result.available_statements : 0;
     if (total_available < remaining) {
