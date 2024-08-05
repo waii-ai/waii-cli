@@ -784,6 +784,7 @@ const tableListDoc = {
     stdin: "",
     options: {
         format: "choose the format of the response: text or json.",
+        include_schema: "Specify schemas to include in the output, separated by commas. If no schema is specified, tables from all schemas will be listed."
     }
 };
 const tableList = async (params: CmdParams) => {
@@ -796,60 +797,59 @@ const tableList = async (params: CmdParams) => {
         throw new Error("No tables found.");
     }
 
+    let schemaSet = new Set<string>();
+    let includeSchema = params.opts['include_schema'];
+
+    if (includeSchema) {
+        const schemaNames = includeSchema.split(',')
+                                         .filter(Boolean)
+                                         .map((name: string) => name.trim().toLowerCase());
+        if (schemaNames.length === 0) {
+            console.error("No schemas specified to include.");
+            return;
+        }
+        schemaSet = new Set(schemaNames);
+    }
+
     switch (params.opts['format']) {
         case 'json': {
+            const tableList = [];
+            for (const schema of result.catalogs[0].schemas) {
+                if (!includeSchema || schemaSet.has(schema.name.schema_name.toLowerCase())) {
+                    tableList.push(schema);
+                }
+            }
 
-            if (params.opts['include_schema']) {
-                const schemaNames = params.opts['include_schema'].split(',').filter(Boolean).map((name : string) => name.trim().toLowerCase());
-                if (schemaNames.length === 0) {
-                    console.error("No schemas specified to include.");
-                    break;
-                }
-            
-                const schemaSet = new Set(schemaNames);
-                const tableList = [];
-            
-                for (const schema of result.catalogs[0].schemas) {
-                    if (schemaSet.has(schema.name.schema_name.toLowerCase())) {
-                        tableList.push(schema);
-                    }
-                }
-            
-                if (tableList.length === 0) {
-                    console.error("Schema not found");
-                    break; 
-                }
-            
+            if (tableList.length === 0 && includeSchema) {
+                console.error("Schema not found");
+            } else {
                 console.log(JSON.stringify(tableList, null, 2));
-                break;
-            } 
-
-            console.log(JSON.stringify(result.catalogs[0].schemas, null, 2));
+            }
             break;
         }
         default: {
             for (const schema of result.catalogs[0].schemas) {
-                let tables = []
-                for (const table of (schema.tables ? schema.tables : [])) {
-                    tables.push(table.name.table_name)
+
+                if (!includeSchema || schemaSet.has(schema.name.schema_name.toLowerCase())) {
+                    let tables = schema.tables ? schema.tables.map(table => table.name.table_name) : [];
+                    let t_s = formatStrings(tables);
+                    const p_s = new Table({
+                        columns: [
+                            { name: 'table', title: schema.name.schema_name, alignment: 'left' },
+                        ],
+                    });
+                    for (const t of t_s.split('\n')) {
+                        p_s.addRow({
+                            table: t,
+                        });
+                    }
+                    p_s.printTable();
                 }
-                let t_s = formatStrings(tables)
-                const p_s = new Table({
-                    columns: [
-                        { name: 'table', title: schema.name.schema_name, alignment: 'left' },
-                    ],
-                })
-                // split t_s by '\n', and add row
-                for (const t of t_s.split('\n')) {
-                    p_s.addRow({
-                        table: t,
-                    })
-                }
-                p_s.printTable()
             }
+            break;
         }
     }
-}
+};
 
 function noQuoteNeeded(identifier: string, includeLowerCases: boolean = true): boolean {
     // If already quoted, no need to quote again
