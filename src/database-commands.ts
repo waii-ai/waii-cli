@@ -798,6 +798,32 @@ const tableList = async (params: CmdParams) => {
 
     switch (params.opts['format']) {
         case 'json': {
+
+            if (params.opts['include_schema']) {
+                const schemaNames = params.opts['include_schema'].split(',').filter(Boolean).map((name : string) => name.trim().toLowerCase());
+                if (schemaNames.length === 0) {
+                    console.error("No schemas specified to include.");
+                    break;
+                }
+            
+                const schemaSet = new Set(schemaNames);
+                const tableList = [];
+            
+                for (const schema of result.catalogs[0].schemas) {
+                    if (schemaSet.has(schema.name.schema_name.toLowerCase())) {
+                        tableList.push(schema);
+                    }
+                }
+            
+                if (tableList.length === 0) {
+                    console.error("Schema not found");
+                    break; 
+                }
+            
+                console.log(JSON.stringify(tableList, null, 2));
+                break;
+            } 
+
             console.log(JSON.stringify(result.catalogs[0].schemas, null, 2));
             break;
         }
@@ -904,6 +930,8 @@ const tableDDL = async (params: CmdParams) => {
     if (!result.catalogs[0].schemas) {
         throw new Error("No tables found.");
     }
+
+    console.log(result)
     for (const catalog of result.catalogs) {
         ddl += `CREATE DATABASE IF NOT EXISTS ${quoteNameIfNeeded(catalog.name)};\n`
 
