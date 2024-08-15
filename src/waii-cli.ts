@@ -10,6 +10,7 @@ import { databaseCommands, schemaCommands, tableCommands } from "./database-comm
 import { queryCommands } from "./query-commands";
 import { semanticCommands } from "./semantic-commands";
 import { historyCommands } from './history-commands';
+import { userCommands } from './user-commands';
 
 const CONF_FILE = '~/.waii/conf.yaml';
 const DEFAULT_API_KEY_IN_TEMPLATE = '<your_waii_api_key_here>'
@@ -83,7 +84,8 @@ const callTree = {
     context: semanticCommands,
     schema: schemaCommands,
     table: tableCommands,
-    history: historyCommands
+    history: historyCommands,
+    user: userCommands
 };
 
 function checkNodeVersion(requiredVersion: number): boolean {
