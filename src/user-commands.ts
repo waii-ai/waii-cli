@@ -330,6 +330,260 @@ const listUsers = async (params: CmdParams) => {
     }
 };
 
+/**
+ * Create Tenant Command
+ *
+ * This function creates a new tenant.
+ *
+ * @param params Command parameters
+ */
+const createTenant = async (params: CmdParams) => {
+    const tenantId = params.vals[0];
+    if (!tenantId) {
+        throw new Error("Tenant ID is required.");
+    }
+
+    const tenant = {
+        id: tenantId,
+        name: params.opts.name || '',
+        org_id: params.opts.org_id || undefined,
+        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined,
+    };
+
+    const createTenantParams = { tenant };
+
+    try {
+        const result = await WAII.User.createTenant(createTenantParams);
+        console.log("Tenant created successfully.");
+    } catch (error) {
+        console.error("Error creating tenant:");
+        throw error;
+    }
+};
+
+/**
+ * Update Tenant Command
+ *
+ * This function updates information about an existing tenant.
+ *
+ * @param params Command parameters
+ */
+const updateTenant = async (params: CmdParams) => {
+    const tenantId = params.vals[0];
+    if (!tenantId) {
+        throw new Error("Tenant ID is required.");
+    }
+
+    const tenant = {
+        id: tenantId,
+        name: params.opts.name || '',
+        org_id: params.opts.org_id || undefined,
+        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined,
+    };
+
+    const updateTenantParams = { tenant };
+
+    try {
+        const result = await WAII.User.updateTenant(updateTenantParams);
+        console.log("Tenant updated successfully.");
+    } catch (error) {
+        console.error("Error updating tenant:");
+        throw error;
+    }
+};
+
+/**
+ * Delete Tenant Command
+ *
+ * This function deletes an existing tenant.
+ *
+ * @param params Command parameters
+ */
+const deleteTenant = async (params: CmdParams) => {
+    const tenantId = params.vals[0];
+    if (!tenantId) {
+        throw new Error("Tenant ID is required.");
+    }
+
+    const deleteTenantParams = { id: tenantId };
+
+    try {
+        const result = await WAII.User.deleteTenant(deleteTenantParams);
+        console.log("Tenant deleted successfully.");
+    } catch (error) {
+        console.error("Error deleting tenant");
+        throw error;
+    }
+};
+
+/**
+ * List Tenants Command
+ *
+ * This function retrieves a list of tenants.
+ *
+ * @param params Command parameters
+ */
+const listTenants = async (params: CmdParams) => {
+    const listTenantsParams = {
+        lookup_org_id: params.opts.lookup_org_id || undefined,
+    };
+
+    try {
+        const result = await WAII.User.listTenants(listTenantsParams);
+        if (!result || !result.tenants || result.tenants.length === 0) {
+            console.log("No tenants found.");
+            return;
+        }
+
+        const p = new Table({
+            columns: [
+                { name: 'Tenant ID', alignment: 'left' },
+                { name: 'Name', alignment: 'left' },
+                { name: 'Org ID', alignment: 'left' },
+                { name: 'Variables', alignment: 'left', maxLen: 60, minLen: 20 },
+            ]
+        });
+
+        result.tenants.forEach((tenant) => {
+            p.addRow({
+                'Tenant ID': tenant.id,
+                'Name': tenant.name || 'N/A',
+                'Org ID': tenant.org_id || 'N/A',
+                'Variables': tenant.variables ? JSON.stringify(tenant.variables) : 'N/A',
+            });
+        });
+
+        p.printTable();
+    } catch (error) {
+        console.error("Error listing tenants:");
+        throw error;
+    }
+};
+
+/**
+ * Create Organization Command
+ *
+ * This function creates a new organization.
+ *
+ * @param params Command parameters
+ */
+const createOrganization = async (params: CmdParams) => {
+    const organizationId = params.vals[0];
+    if (!organizationId) {
+        throw new Error("Organization ID is required.");
+    }
+
+    const organization = {
+        id: organizationId,
+        name: params.opts.name || '',
+        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined,
+    };
+
+    const createOrganizationParams = { organization };
+
+    try {
+        const result = await WAII.User.createOrganization(createOrganizationParams);
+        console.log("Organization created successfully.");
+    } catch (error) {
+        console.error("Error creating organization:");
+        throw error;
+    }
+};
+
+/**
+ * Update Organization Command
+ *
+ * This function updates an existing organization.
+ *
+ * @param params Command parameters
+ */
+const updateOrganization = async (params: CmdParams) => {
+    const organizationId = params.vals[0];
+    if (!organizationId) {
+        throw new Error("Organization ID is required.");
+    }
+
+    const organization = {
+        id: organizationId,
+        name: params.opts.name || '',
+        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined,
+    };
+
+    const updateOrganizationParams = { organization };
+
+    try {
+        const result = await WAII.User.updateOrganization(updateOrganizationParams);
+        console.log("Organization updated successfully.");
+    } catch (error) {
+        console.error("Error updating organization:");
+        throw error;
+    }
+};
+
+/**
+ * Delete Organization Command
+ *
+ * This function deletes an existing organization.
+ *
+ * @param params Command parameters
+ */
+const deleteOrganization = async (params: CmdParams) => {
+    const organizationId = params.vals[0];
+    if (!organizationId) {
+        throw new Error("Organization ID is required.");
+    }
+
+    const deleteOrganizationParams = { id: organizationId };
+
+    try {
+        const result = await WAII.User.deleteOrganization(deleteOrganizationParams);
+        console.log("Organization deleted successfully.");
+    } catch (error) {
+        console.error("Error deleting organization:");
+        throw error;
+    }
+};
+
+/**
+ * List Organizations Command
+ *
+ * This function retrieves a list of organizations.
+ *
+ * @param params Command parameters
+ */
+const listOrganizations = async (params: CmdParams) => {
+    try {
+        const result = await WAII.User.listOrganizations({});
+        if (!result || !result.organizations || result.organizations.length === 0) {
+            console.log("No organizations found.");
+            return;
+        }
+
+        const p = new Table({
+            columns: [
+                { name: 'Organization ID', alignment: 'left' },
+                { name: 'Name', alignment: 'left' },
+                { name: 'Variables', alignment: 'left', maxLen: 60, minLen: 20 },
+            ]
+        });
+
+        result.organizations.forEach((organization) => {
+            p.addRow({
+                'Organization ID': organization.id,
+                'Name': organization.name || 'N/A',
+                'Variables': organization.variables ? JSON.stringify(organization.variables) : 'N/A',
+            });
+        });
+
+        p.printTable();
+    } catch (error) {
+        console.error("Error listing organizations:");
+        throw error;
+    }
+};
+
+
+
 
 
 /**
@@ -444,6 +698,126 @@ const listUsersDoc = {
         "lookup_org_id": "The organization ID for which the users are to be retrieved."
     }
 };
+const createTenantDoc = {
+    description: "Create a new tenant.",
+    parameters: [
+        {
+            name: "tenantId",
+            type: "string",
+            description: "The unique ID of the tenant to be created.",
+        }
+    ],
+    stdin: "",
+    options: {
+        name: "The display name of the tenant.",
+        org_id: "The organization ID of the tenant.",
+        variables: "A JSON string representing the tenant's variables.",
+    }
+};
+
+const updateTenantDoc = {
+    description: "Update an existing tenant.",
+    parameters: [
+        {
+            name: "tenantId",
+            type: "string",
+            description: "The unique ID of the tenant to be updated.",
+        }
+    ],
+    stdin: "",
+    options: {
+        name: "The display name of the tenant.",
+        org_id: "The organization ID of the tenant.",
+        variables: "A JSON string representing the tenant's variables.",
+    }
+};
+
+const deleteTenantDoc = {
+    description: "Delete an existing tenant.",
+    parameters: [
+        {
+            name: "tenantId",
+            type: "string",
+            description: "The ID of the tenant to be deleted.",
+        }
+    ],
+    stdin: "",
+    options: {}
+};
+
+const listTenantsDoc = {
+    description: "Retrieve a list of tenants.",
+    parameters: [],
+    stdin: "",
+    options: {
+        lookup_org_id: "The organization ID for which the tenants are to be retrieved."
+    }
+};
+
+const createOrganizationDoc = {
+    description: "Create a new organization.",
+    parameters: [
+        {
+            name: "organizationId",
+            type: "string",
+            description: "The unique ID of the organization to be created.",
+        }
+    ],
+    options: {
+        name: {
+            type: "string",
+            description: "The display name of the organization.",
+        },
+        variables: {
+            type: "string",
+            description: "A JSON string representing key-value pairs of organization variables.",
+        }
+    },
+    stdin: ""
+};
+
+const updateOrganizationDoc = {
+    description: "Update an existing organization.",
+    parameters: [
+        {
+            name: "organizationId",
+            type: "string",
+            description: "The unique ID of the organization to be updated.",
+        }
+    ],
+    options: {
+        name: {
+            type: "string",
+            description: "The display name of the organization.",
+        },
+        variables: {
+            type: "string",
+            description: "A JSON string representing key-value pairs of organization variables.",
+        }
+    },
+    stdin: ""
+};
+
+const deleteOrganizationDoc = {
+    description: "Delete an existing organization.",
+    parameters: [
+        {
+            name: "organizationId",
+            type: "string",
+            description: "The unique ID of the organization to be deleted.",
+        }
+    ],
+    stdin: ""
+};
+
+const listOrganizationsDoc = {
+    description: "List all organizations.",
+    parameters: [],
+    stdin: ""
+};
+
+
+
 
 
 /**
@@ -460,7 +834,16 @@ const userCommands = {
     create: { fn: createUser, doc: createUserDoc },
     delete: { fn: deleteUser, doc: deleteUserDoc },
     update: { fn: updateUser, doc: updateUserDoc }, 
-    list: {fn: listUsers, doc: listUsersDoc}
+    list: {fn: listUsers, doc: listUsersDoc},
+    create_tenant: { fn: createTenant, doc: createTenantDoc },
+    update_tenant: { fn: updateTenant, doc: updateTenantDoc },
+    delete_tenant: { fn: deleteTenant, doc: deleteTenantDoc },
+    list_tenant: { fn: listTenants, doc: listTenantsDoc },
+    create_org: { fn: createOrganization, doc: createOrganizationDoc },
+    update_org:{ fn: updateOrganization, doc: updateOrganizationDoc },
+    delete_org: {fn: deleteOrganization, doc: deleteOrganizationDoc},
+    list_org: {fn: listOrganizations, doc: listOrganizations}
+
 };
 
 export { userCommands };
