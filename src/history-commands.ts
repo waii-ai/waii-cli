@@ -10,30 +10,7 @@ import { printQuery } from "./query-commands";
  *
  * @param history
  */
-const printHistory = (history: GeneratedQueryHistoryEntry[], limit: number, liked: boolean) => {
-    // filter out entries with empty query
-    if (liked) {
-        history = history.filter((entry) => {
-            if (entry.query && entry.query.liked) {
-                return entry.query
-            }
-            return false
-        })
-    }
-    else {
-        history = history.filter((entry) => {
-            return entry.query
-        })
-    }
-
-    history.sort((a, b) => {
-        // @ts-ignore
-        return b.query.timestamp_ms - a.query.timestamp_ms;
-    })
-
-    // pick top 10 entries
-    history = history.slice(0, limit);
-
+const printHistory = (history: GeneratedQueryHistoryEntry[]) => {
     for (const entry of history) {
         if (!entry.query || !entry.request) {
             continue;
@@ -108,7 +85,13 @@ const historyList = async (params: CmdParams) => {
         liked = stringToBoolean(params.opts['liked'])
     }
 
-    let result = await WAII.History.list();
+
+    let result = await WAII.History.get({
+        limit: limit,
+        liked_query_filter: liked,
+        included_types: ['query']
+    });
+
     switch (params.opts['format']) {
         case 'json': {
             console.log(JSON.stringify(result, null, 2));
@@ -118,7 +101,7 @@ const historyList = async (params: CmdParams) => {
             if (!result.history) {
                 throw new Error("No history found.");
             }
-            printHistory(result.history, limit, liked);
+            printHistory(result.history as GeneratedQueryHistoryEntry[]);
         }
     }
 }
