@@ -842,7 +842,7 @@ const userCommands = {
     create_org: { fn: createOrganization, doc: createOrganizationDoc },
     update_org:{ fn: updateOrganization, doc: updateOrganizationDoc },
     delete_org: {fn: deleteOrganization, doc: deleteOrganizationDoc},
-    list_org: {fn: listOrganizations, doc: listOrganizations}
+    list_org: {fn: listOrganizations, doc: listOrganizationsDoc}
 
 };
 
