@@ -581,7 +581,7 @@ const extractDocFn = async (params: CmdParams) => {
 
     // convert to semantic context
     let doc = result.database_documentation;
-
+    
     let semanticStatements: SemanticStatement[] = []
 
     for (const schema of doc.schemas || []) {
@@ -619,7 +619,7 @@ const extractDocFn = async (params: CmdParams) => {
         }
     }
 
-    if (params.opts['update']) {
+    if (params.opts['update'] == "true") {
         let updateResult = await WAII.SemanticContext.modifySemanticContext({
             updated: semanticStatements
         });
