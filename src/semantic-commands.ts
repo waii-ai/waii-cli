@@ -89,8 +89,6 @@ async function load_context(spec: any):Promise<GetSemanticContextResponse> {
 
             remaining -= batch_result.semantic_context.length;
             spec.offset += batch_result.semantic_context.length;
-
-            console.log("Loaded ", batch_result.semantic_context.length, " statement(s), ", remaining, " remaining");
         } else {
             // no more statements to load
             break;
