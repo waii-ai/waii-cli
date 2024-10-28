@@ -79,32 +79,49 @@ const printConnectors = (connectors?: DBConnection[], status?: {
             let p = new Table({ columns });
             p.addRow(row);
 
-            let percentage = 1;
-            if (status) {
-                let total = 0;
-                let pending = 0;
-                let db_status = status[connection.key];
-                for (const schema in db_status.schema_status) {
-                    let schema_status = db_status.schema_status[schema];
-                    total += schema_status.n_total_tables;
-                    pending += schema_status.n_pending_indexing_tables;
+            try {
+                let percentage = 1;
+
+                if (status) {
+                    let total = 0;
+                    let pending = 0;
+                    let db_status = status[connection.key];
+
+                    if (db_status && db_status.schema_status) {
+                        for (const schema in db_status.schema_status) {
+                            let schema_status = db_status.schema_status[schema];
+                            total += schema_status.n_total_tables;
+                            pending += schema_status.n_pending_indexing_tables;
+                        }
+                    }
+
+                    let denoTotal = db_status && db_status.status === 'indexing' ? total + 5 : total;
+                    percentage = (total > 0) ? (total - pending) / denoTotal : 1;
                 }
-                let denoTotal = db_status.status === 'indexing' ? total + 5 : total;
-                percentage = (total > 0) ? (total - pending) / denoTotal : 1;
-            }
 
-            if (connection.key == defaultScope) {
-                console.log("\x1b[32m%s\x1b[0m", "Key: " + connection.key + " [Active]");
-            }
-            else {
-                console.log("Key: " + connection.key);
-            }
+                if (connection.key == defaultScope) {
+                    console.log("\x1b[32m%s\x1b[0m", "Key: " + connection.key + " [Active]");
+                } else {
+                    console.log("Key: " + connection.key);
+                }
 
-            if (status) {
-                let status_string = status[connection.key].status;
-                console.log("Indexing status: " + status_string);
-                if (status_string === "indexing") {
-                    console.log("Percent complete: " + `${Math.round(percentage * 100 * 100) / 100}%`);
+                // Check status for specific connection key and display indexing status
+                if (status && status[connection.key]) {
+                    let status_string = status[connection.key].status;
+                    console.log("Indexing status: " + status_string);
+                    if (status_string === "indexing") {
+                        console.log("Percent complete: " + `${Math.round(percentage * 100 * 100) / 100}%`);
+                    }
+                } else {
+                    console.log("Status information for connection key is not available.");
+                }
+            } catch (error) {
+                console.error("An error occurred while processing the status data:");
+                if (error instanceof Error) {
+                    console.error("Error message:", error.message);
+                    console.error("Stack trace:", error.stack);
+                } else {
+                    console.error("Unknown error type:", error);
                 }
             }
 
