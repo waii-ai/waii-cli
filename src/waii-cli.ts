@@ -11,6 +11,7 @@ import { queryCommands } from "./query-commands";
 import { semanticCommands } from "./semantic-commands";
 import { historyCommands } from './history-commands';
 import { userCommands } from './user-commands';
+import { generateCliReference } from './doc-generator';
 
 const CONF_FILE = '~/.waii/conf.yaml';
 const DEFAULT_API_KEY_IN_TEMPLATE = '<your_waii_api_key_here>'
@@ -78,14 +79,26 @@ function printCommands(commands: any, level: number = 0) {
     console.log('');
 }
 
-const callTree = {
+export const callTree = {
     query: queryCommands,
     database: databaseCommands,
     context: semanticCommands,
     schema: schemaCommands,
     table: tableCommands,
     history: historyCommands,
-    user: userCommands
+    user: userCommands,
+    docs: {
+        generate: {
+            fn: async () => {
+                generateCliReference(callTree);
+            },
+            doc: {
+                description: 'Generate CLI documentation',
+                parameters: [],
+                options: {}
+            }
+        }
+    }
 };
 
 function checkNodeVersion(requiredVersion: number): boolean {
@@ -192,3 +205,13 @@ main();
     clearTimeout(timer);
     log() // logs out active handles that are keeping node running
   }, 10000);*/
+
+export { 
+    queryCommands,
+    databaseCommands,
+    semanticCommands,
+    schemaCommands,
+    tableCommands,
+    historyCommands,
+    userCommands
+};

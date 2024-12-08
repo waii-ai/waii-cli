@@ -24,7 +24,44 @@ const queryCreateDoc = {
     options: {
         format: "choose the format of the response: text or json",
         dialect: "choose the database backend: snowflake or postgres"
-    }
+    },
+    examples: `Example 1: Generate a query to count columns
+<code>waii query create "How many columns for each table in the database? Include table name and schema name"</code>
+
+<code>
+SELECT 
+    table_schema,
+    table_name,
+    COUNT(*) as num_columns
+FROM information_schema.columns
+GROUP BY table_schema, table_name
+ORDER BY table_schema, table_name;
+</code>
+
+Example 2: Find customer spending patterns
+<code>waii query create "Find customers whose increase in spend from the first month of the year to the last month of the year has increased more in 2001 than in 2000."</code>
+
+<code>
+WITH customer_spending AS (
+    SELECT 
+        c_customer_sk,
+        YEAR(d_date) as year,
+        SUM(CASE WHEN d_moy = 1 THEN ss_net_paid ELSE 0 END) as first_month_spend,
+        SUM(CASE WHEN d_moy = 12 THEN ss_net_paid ELSE 0 END) as last_month_spend
+    FROM store_sales
+    JOIN date_dim ON ss_sold_date_sk = d_date_sk
+    WHERE YEAR(d_date) IN (2000, 2001)
+    GROUP BY c_customer_sk, YEAR(d_date)
+)
+SELECT 
+    cs1.c_customer_sk
+FROM customer_spending cs1
+JOIN customer_spending cs2 ON cs1.c_customer_sk = cs2.c_customer_sk
+WHERE cs1.year = 2001 
+AND cs2.year = 2000
+AND (cs1.last_month_spend - cs1.first_month_spend) > 
+    (cs2.last_month_spend - cs2.first_month_spend);
+</code>`
 };
 
 const queryCreate = async (params: CmdParams) => {
@@ -112,7 +149,28 @@ const queryExplainDoc = {
     stdin: "If there is no query in the arguments, query is read from stdin.",
     options: {
         format: "choose the format of the response: text or json.",
-    }
+    },
+    examples: `Example: Describe a complex query
+<code>cat my-complex-query.sql | waii query describe</code>
+
+<code>
+Query Analysis:
+--------------
+This query analyzes customer spending patterns by:
+1. Calculating monthly spending for each customer in 2000 and 2001
+2. Comparing the spending increase between first and last months
+3. Finding customers with higher spending growth in 2001 vs 2000
+
+Tables Used:
+- store_sales
+- date_dim
+- customer
+
+Key Operations:
+1. Joins store_sales with date_dim to get temporal information
+2. Aggregates spending by customer and year
+3. Self-joins results to compare year-over-year changes
+</code>`
 };
 const queryExplain = async (params: CmdParams) => {
     let query = params.input;
@@ -247,7 +305,9 @@ const queryTranscodeDoc = {
         from: "choose the database backend to translate from: snowflake or postgres",
         to: "choose the database backend to translate to: snowflake or postgres",
         split_queries: "split the input into multiple queries and convert them one by one. Default is true.",
-    }
+    },
+    examples: `Example: Convert PySpark query to Snowflake SQL
+<code>cat pyspark.sql | waii query transcode -from pyspark -to snowflake</code>`
 };
 const queryTranscode = async (params: CmdParams) => {
     let from_dialect = params.opts['from'];
@@ -333,11 +393,39 @@ const sanitizeData = (rowName: string, columnValue: any) => {
 const queryRunDoc = {
     description: "Execute the query and return the results",
     parameters: ["query - you can specify the query to run as a parameter."],
-    stdin: "If no parameters are specified, the query to run will be read from stdin.",
+    stdin: "If no parameters are specified, the query to be run will be read from stdin.",
     options: {
         format: "choose the format of the response: text or json",
         schema: "use the schema given as the schema for the query. format: <db>.<schema>"
-    }
+    },
+    examples: `Example: Run a complex query
+<code>cat <<EOF | waii query run
+WITH joined_data AS (
+    SELECT
+        c.name AS country_name,
+        ci.population AS city_population
+    FROM tweakit_playground.world.city AS ci
+    INNER JOIN tweakit_playground.world.country AS c
+        ON ci.countrycode = c.code
+)
+
+SELECT
+    country_name,
+    AVG(city_population) AS avg_city_population
+FROM joined_data
+GROUP BY
+    country_name
+EOF</code>
+
+<code>
+┌─────────────────┬────────────────────┐
+│ country_name    │ avg_city_population│
+├─────────────────┼────────────────────┤
+│ United States   │ 286,955            │
+│ China           │ 842,233            │
+│ India           │ 534,489            │
+└─────────────────┴────────────────────┘
+</code>`
 };
 const queryRun = async (params: CmdParams) => {
     let query = "";

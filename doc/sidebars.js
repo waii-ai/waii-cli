@@ -12,13 +12,8 @@ module.exports = {
 	},
 	{
 	    type: 'doc',
-	    id: 'commands',
-	    label: 'CLI Commands',
-	},
-	{
-	    type: 'doc',
-	    id: 'getting-started',
-	    label: 'Getting Started',
+	    id: 'waii-cli-reference',
+	    label: 'CLI Reference',
 	},
     ],
 };

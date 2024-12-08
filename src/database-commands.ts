@@ -139,7 +139,17 @@ const databaseListDoc = {
     stdin: "",
     options: {
         format: "choose the format of the response: text or json.",
-    }
+    },
+    examples: `Example: List all databases
+<code>waii database list</code>
+
+<code>
+┌──────────────────┬────────────────────┬────────────┬───────────────────┬──────────────┐
+│ account_name     │ database           │ warehouse  │ role              │ username     │
+├──────────────────┼────────────────────┼────────────┼───────────────────┼──────────────┤
+│ gq.........91428 │ TWEAKIT_PLAYGROUND │ COMPUTE_WH │ TWEAKIT_USER_ROLE │ TWEAKIT_USER │
+└──────────────────┴────────────────────┴────────────┴───────────────────┴──────────────┘
+</code>`
 };
 const databaseList = async (params: CmdParams) => {
     let result = await WAII.Database.getConnections();
@@ -240,7 +250,20 @@ const databaseAddDoc = {
         exclude_columns_for_sampling: "don't sample columns matching this pattern",
         exclude_tables_for_sampling: "don't sample tables matching this pattern",
         exclude_schemas_for_sampling: "don't sample schemas matching this pattern",
-    }
+    },
+    examples: `Example: Add a snowflake database
+<code>waii database add --account 'xxxxx-yyyyy' --db '<DB>' --warehouse '<COMPUTE_WH>' --role '<YOUR_SNOWFLAKE_ROLE>' --user '<YOUR_SNOWFLAKE_USER>' --pass '********'</code>
+
+Other parameters:
+- \`no_column_samples\`: If set to \`true\`, the column samples will not be fetched. Default is \`false\`.
+- You can also use \`exclude_columns_for_sampling\`, \`exclude_tables_for_sampling\`, \`exclude_schemas_for_sampling\` to exclude some tables, columns, schemas from sampling.
+- You can add multiple patterns, e.g.
+
+<code>
+--exclude_columns_for_sampling ".*name.*" --exclude_columns_for_sampling ".*bio.*" --exclude_columns_for_sampling ".*year" --exclude_tables_for_sampling "tv_series"
+</code>
+
+It will exclude all columns contain \`name\`, \`bio\`, \`year\` in their names, and exclude table \`tv_series\`.`
 };
 
 const _addColFilterForSampling = (filters: DBContentFilter[], params: CmdParams, opt_name: string, filter_scope: DBContentFilterScope) => {
@@ -447,11 +470,14 @@ const databaseAdd = async (params: CmdParams) => {
 }
 
 const databaseActivateDoc = {
-    description: "Activate a database connection. Most other commands will use the database chosen here.",
-    parameters: ["url - the key of the database connection."],
+    description: "Activate a database for use in generating queries and getting table information.",
+    parameters: ["url - URL of the database to activate (can be found by running 'waii database list')"],
     stdin: "",
-    options: {
-    }
+    options: {},
+    examples: `Example: Activate a database
+<code>waii database activate <url_of_the_database></code>
+
+Note: The URL can be found by running 'waii database list'`
 };
 const databaseActivate = async (params: CmdParams) => {
     await getDBConnectionKeyIfNotProvided(params, 'activate');
@@ -538,8 +564,24 @@ const extractDoc = {
         schemas: "Comma separated list of schemas to extract documentation from. If not provided, will search in all schemas.",
         tables: "Comma separated list of tables to extract documentation from. If schema is not provided, will search in all tables.",
         update: "If set to true, will update the existing semantic context, default is false.",
-    }
-}
+    },
+    examples: `Example: Extract documentation from a web page
+<code>waii database extract_doc --url "https://fleetdm.com/tables/chrome_extensions" --update true</code>
+
+Example: Extract documentation from a text file
+<code>waii database extract_doc --file "path/to/file.txt" --doc_type text --update false</code>
+
+Example: Extract documentation from a local HTML file
+<code>waii database extract_doc --file "path/to/file.html" --doc_type html --update true</code>
+
+Options:
+- \`--file\`: The URL of the web page or the path to the text file.
+- \`--doc_type\`: The type of the documentation (only applies to \`file\`). It can be \`html\`, \`text\`. Default is \`text\`.
+- \`--url\`: The URL of the web page. (Note that you can only use \`--file\` or \`--url\` at a time)
+- \`--update\`: If set to \`true\`, the extracted documentation will be updated in the database. If set to \`false\`, the extracted documentation will be displayed in the console.
+- \`--tables\`: The name of the tables where the documentation will be mapped to. By default we will search all the tables in the database.
+- \`--schemas\`: The name of the schemas where the documentation will be mapped to. By default we will search all the schemas in the database.`
+};
 
 const extractDocFn = async (params: CmdParams) => {
     // check if url or file is provided, and only one of them
@@ -694,12 +736,36 @@ const schemaList = async (params: CmdParams) => {
 }
 
 const schemaDescribeDoc = {
-    description: "Show the details of a schema.",
-    parameters: ["<db>.<schema> - name of the schema to describe."],
+    description: "Get a generated description of a schema.",
+    parameters: ["schema_name - name of the schema to describe"],
     stdin: "",
     options: {
-        format: "choose the format of the response: text or json.",
-    }
+        format: "choose the format of the response: text or json"
+    },
+    examples: `Example: Describe a schema
+<code>waii schema describe RETAIL_DATA</code>
+
+<code>
+Schema:
+-------
+TWEAKIT_PLAYGROUND.RETAIL_DATA
+
+Description:
+------------
+The TWEAKIT_PLAYGROUND.RETAIL_DATA schema contains tables related to retail data analysis, including 
+information about call centers, customers, addresses, demographics, dates, household demographics, 
+income bands, inventory, items, promotions, reasons, stores, store returns, store sales, time 
+dimensions, and warehouses.
+
+Tables:
+-------
+┌────────────────────────┐
+│ table                  │
+├────────────────────────┤
+│ PROMOTION              │
+│ STORE_SALES            │
+│ ITEM                   │
+</code>`
 };
 const schemaDescribe = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();
@@ -796,13 +862,31 @@ function formatStrings(list: string[]): string {
 }
 
 const tableListDoc = {
-    description: "List all the tables in a database.",
+    description: "List all tables in the current database.",
     parameters: [],
     stdin: "",
     options: {
-        format: "choose the format of the response: text or json.",
-        include_schema: "Specify schemas to include in the output, separated by commas. If no schema is specified, tables from all schemas will be listed."
-    }
+        format: "choose the format of the response: text or json"
+    },
+    examples: `Example: List all tables in the current database
+<code>waii table list</code>
+
+<code>
+Output:
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ INFORMATION_SCHEMA                                                                   │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ENABLED_ROLES                    TABLES                           COLUMNS            │
+│ SEQUENCES                        VIEWS                            TABLE_PRIVILEGES   │
+│ DATABASES                        REPLICATION_DATABASES            REPLICATION_GROUPS │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ RETAIL_DATA                                                                          │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ PROMOTION               STORE_SALES             ITEM                    STORE        │
+│ DATE_DIM               HOUSEHOLD_DEMOGRAPHICS   TIME_DIM                CUSTOMER     │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+</code>`
 };
 const tableList = async (params: CmdParams) => {
     let result = await WAII.Database.getCatalogs();

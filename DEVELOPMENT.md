@@ -42,6 +42,18 @@ After that, you can run `node . <...>` inside `waii-cli` folder to test your cha
 
 However, be careful that such commands may change package.json package.lock.json files. You may need to revert the changes after testing.
 
+## Generate doc
+
+Run 
+
+```
+tsc
+node . docs generate
+```
+
+to refresh doc. 
+
+
 ## Publish to NPM
 First, you need to login to NPM by running `npm login`. if you don't have an account, or your account doesn't have the permission to publish the package, please contact the Waii team.
 Then, you need to bump up the version number in `package.json`
