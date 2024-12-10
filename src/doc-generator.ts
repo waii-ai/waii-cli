@@ -1,6 +1,17 @@
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { dirname } from 'path';
 
+function escapeHtmlTags(text: any): string {
+    try {
+        // Convert to string and escape all HTML-like tags, except <code>
+        const str = typeof text === 'string' ? text : JSON.stringify(text, null, 2);
+        return str.replace(/<(?!code|\/code)([^>]+)>/g, '\\<$1\\>');
+    } catch (error) {
+        console.error('Error processing text:', error);
+        return String(text || ''); // Fallback to basic string conversion or empty string
+    }
+}
+
 function printCommands(commands: any, level: number = 0, parentPath: string = ''): string {
     let md = '';
     for (const o in commands) {
@@ -14,47 +25,18 @@ function printCommands(commands: any, level: number = 0, parentPath: string = ''
                 md += `### \`waii ${currentPath}\`\n\n`;
                 if (commands[o]['doc']) {
                     const doc = commands[o]['doc'];
-                    md += `${doc.description}\n\n`;
+                    md += `${escapeHtmlTags(doc.description)}\n\n`;
 
                     // Add parameters if they exist and are not empty
                     if (doc.parameters && doc.parameters.length > 0) {
                         md += '#### Parameters\n\n';
-                        // Handle different parameter formats
-                        if (typeof doc.parameters === 'string') {
-                            const params = doc.parameters.split(',').map((p: string) => p.trim());
-                            params.forEach((param: string) => {
-                                const [name, desc] = param.split(':').map((p: string) => p.trim());
-                                if (name && desc) {
-                                    md += `${name} - ${desc}\n\n`;
-                                }
-                            });
-                        } else if (Array.isArray(doc.parameters)) {
-                            doc.parameters.forEach((param: any) => {
-                                if (typeof param === 'object') {
-                                    // Handle object format parameters
-                                    if (param.name && param.description) {
-                                        md += `${param.name} - ${param.description}\n\n`;
-                                    }
-                                } else if (typeof param === 'string') {
-                                    md += `${param}\n\n`;
-                                }
-                            });
-                        }
+                        md += escapeHtmlTags(doc.parameters) + '\n\n';
                     }
 
                     // Add options if they exist and are not empty
                     if (doc.options && Object.keys(doc.options).length > 0) {
                         md += '#### Options\n\n';
-                        for (const opt in doc.options) {
-                            const optValue = doc.options[opt];
-                            if (typeof optValue === 'object') {
-                                // Handle object format options
-                                md += `- \`--${opt}\`: ${optValue.description || JSON.stringify(optValue)}\n`;
-                            } else {
-                                md += `- \`--${opt}\`: ${optValue}\n`;
-                            }
-                        }
-                        md += '\n';
+                        md += escapeHtmlTags(doc.options) + '\n\n';
                     }
 
                     // Add examples if they exist
@@ -64,7 +46,7 @@ function printCommands(commands: any, level: number = 0, parentPath: string = ''
                         const formattedExamples = doc.examples
                             .replace(/<code>/g, '```\n')
                             .replace(/<\/code>/g, '\n```\n');
-                        md += `${formattedExamples}\n\n`;
+                        md += formattedExamples + '\n\n';
                     }
                 }
                 md += '---\n\n';
