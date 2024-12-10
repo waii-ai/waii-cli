@@ -12,6 +12,41 @@ function escapeHtmlTags(text: any): string {
     }
 }
 
+function formatParametersAsTable(params: any[]): string {
+    let table = '| Name | Type | Description |\n';
+    table += '|------|------|-------------|\n';
+    
+    params.forEach(param => {
+        if (typeof param === 'object') {
+            const name = escapeHtmlTags(param.name || '');
+            const type = escapeHtmlTags(param.type || '');
+            const desc = escapeHtmlTags(param.description || '');
+            table += `| ${name} | ${type} | ${desc} |\n`;
+        } else {
+            table += `| ${escapeHtmlTags(param)} | | |\n`;
+        }
+    });
+    
+    return table + '\n';
+}
+
+function formatOptionsAsTable(options: any): string {
+    let table = '| Option | Description |\n';
+    table += '|---------|-------------|\n';
+    
+    Object.entries(options).forEach(([key, value]) => {
+        let desc: string;
+        if (value && typeof value === 'object' && 'description' in value) {
+            desc = value.description as string;
+        } else {
+            desc = String(value);
+        }
+        table += `| \`--${key}\` | ${escapeHtmlTags(desc)} |\n`;
+    });
+    
+    return table + '\n';
+}
+
 function printCommands(commands: any, level: number = 0, parentPath: string = ''): string {
     let md = '';
     for (const o in commands) {
@@ -30,13 +65,13 @@ function printCommands(commands: any, level: number = 0, parentPath: string = ''
                     // Add parameters if they exist and are not empty
                     if (doc.parameters && doc.parameters.length > 0) {
                         md += '#### Parameters\n\n';
-                        md += escapeHtmlTags(doc.parameters) + '\n\n';
+                        md += formatParametersAsTable(doc.parameters);
                     }
 
                     // Add options if they exist and are not empty
                     if (doc.options && Object.keys(doc.options).length > 0) {
                         md += '#### Options\n\n';
-                        md += escapeHtmlTags(doc.options) + '\n\n';
+                        md += formatOptionsAsTable(doc.options);
                     }
 
                     // Add examples if they exist

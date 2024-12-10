@@ -75,16 +75,16 @@ Generate a query from text. Pass a question or instructions and receive the quer
 
 #### Parameters
 
-[
-  "ask - a question or set of instructions to generate the query."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| ask - a question or set of instructions to generate the query. | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json",
-  "dialect": "choose the database backend: snowflake or postgres"
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json |
+| `--dialect` | choose the database backend: snowflake or postgres |
 
 #### Examples
 
@@ -146,17 +146,17 @@ Update a query from text. Pass a question or instructions and receive the query 
 
 #### Parameters
 
-[
-  "instructions - a set of instructions to update the query."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| instructions - a set of instructions to update the query. | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json.",
-  "dialect": "choose the database backend: snowflake or postgres.",
-  "schema": "optional schema name that the query uses."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
+| `--dialect` | choose the database backend: snowflake or postgres. |
+| `--schema` | optional schema name that the query uses. |
 
 ---
 
@@ -166,15 +166,15 @@ Explain a query.
 
 #### Parameters
 
-[
-  "query - the query to explain"
-]
+| Name | Type | Description |
+|------|------|-------------|
+| query - the query to explain | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
 
 #### Examples
 
@@ -214,19 +214,19 @@ Compare two queries and explain the differences.
 
 #### Parameters
 
-[
-  "qf_1: the first query",
-  "qf_2: the second query"
-]
+| Name | Type | Description |
+|------|------|-------------|
+| qf_1: the first query | | |
+| qf_2: the second query | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json.",
-  "dialect": "choose the database backend: snowflake or postgres.",
-  "qf_1": "filename of a file containing the first query",
-  "qf_2": "filename of a file containing the second query"
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
+| `--dialect` | choose the database backend: snowflake or postgres. |
+| `--qf_1` | filename of a file containing the first query |
+| `--qf_2` | filename of a file containing the second query |
 
 ---
 
@@ -236,10 +236,10 @@ Rewrite the query in a more readable and performant way.
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json",
-  "dialect": "choose the database backend: snowflake or postgres"
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json |
+| `--dialect` | choose the database backend: snowflake or postgres |
 
 ---
 
@@ -249,18 +249,18 @@ Translate queries from one dialect to another, if multiple queries are provided,
 
 #### Parameters
 
-[
-  "ask - you can specify additional instructions to translate the query, such as 'use the test schema for converted query'"
-]
+| Name | Type | Description |
+|------|------|-------------|
+| ask - you can specify additional instructions to translate the query, such as 'use the test schema for converted query' | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json",
-  "from": "choose the database backend to translate from: snowflake or postgres",
-  "to": "choose the database backend to translate to: snowflake or postgres",
-  "split_queries": "split the input into multiple queries and convert them one by one. Default is true."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json |
+| `--from` | choose the database backend to translate from: snowflake or postgres |
+| `--to` | choose the database backend to translate to: snowflake or postgres |
+| `--split_queries` | split the input into multiple queries and convert them one by one. Default is true. |
 
 #### Examples
 
@@ -278,19 +278,19 @@ Compare two queries and explain the differences.
 
 #### Parameters
 
-[
-  "qf_1: the first query",
-  "qf_2: the second query"
-]
+| Name | Type | Description |
+|------|------|-------------|
+| qf_1: the first query | | |
+| qf_2: the second query | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json.",
-  "dialect": "choose the database backend: snowflake or postgres.",
-  "qf_1": "filename of a file containing the first query",
-  "qf_2": "filename of a file containing the second query"
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
+| `--dialect` | choose the database backend: snowflake or postgres. |
+| `--qf_1` | filename of a file containing the first query |
+| `--qf_2` | filename of a file containing the second query |
 
 ---
 
@@ -300,16 +300,16 @@ Execute the query and return the results
 
 #### Parameters
 
-[
-  "query - you can specify the query to run as a parameter."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| query - you can specify the query to run as a parameter. | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json",
-  "schema": "use the schema given as the schema for the query. format: \<db\>.\<schema\>"
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json |
+| `--schema` | use the schema given as the schema for the query. format: \<db\>.\<schema\> |
 
 #### Examples
 
@@ -356,21 +356,21 @@ Analyze query performance.
 
 #### Parameters
 
-[
-  "query - you can specify the query to run and analyze as a parameter."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| query - you can specify the query to run and analyze as a parameter. | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json",
-  "query": "You can specify the query to run and analyze as an option as well",
-  "query_id": "You can specify a query that ran already and get performance insights.",
-  "summary": "Print the performance analysis summary.",
-  "recommendations": "Print recommendations on how to improve the query.",
-  "query_text": "Print query (useful when you're using query_id)",
-  "times": "Print the query execution and compile time."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json |
+| `--query` | You can specify the query to run and analyze as an option as well |
+| `--query_id` | You can specify a query that ran already and get performance insights. |
+| `--summary` | Print the performance analysis summary. |
+| `--recommendations` | Print recommendations on how to improve the query. |
+| `--query_text` | Print query (useful when you're using query_id) |
+| `--times` | Print the query execution and compile time. |
 
 ---
 
@@ -380,12 +380,12 @@ Generate questions based on the database schema.
 
 #### Options
 
-{
-  "schema": "Name of the schema to generate questions for.",
-  "complexity": "Complexity of the questions to generate: easy, medium, hard",
-  "n_questions": "Number of questions to generate",
-  "format": "choose the format of the response: text or json"
-}
+| Option | Description |
+|---------|-------------|
+| `--schema` | Name of the schema to generate questions for. |
+| `--complexity` | Complexity of the questions to generate: easy, medium, hard |
+| `--n_questions` | Number of questions to generate |
+| `--format` | choose the format of the response: text or json |
 
 ---
 
@@ -398,9 +398,9 @@ List all the configured databases.
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
 
 #### Examples
 
@@ -429,23 +429,23 @@ Add a database connection.
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json.",
-  "connect_string": "specify connection string instead of individual fields",
-  "account": "account name",
-  "db": "database name",
-  "warehouse": "warehouse name",
-  "role": "role name",
-  "user": "user name",
-  "pass": "password",
-  "no_column_samples": "if set, will not sample columns",
-  "exclude_columns": "don't index columns matching this pattern",
-  "exclude_tables": "don't index tables matching this pattern",
-  "exclude_schemas": "don't index schemas matching this pattern",
-  "exclude_columns_for_sampling": "don't sample columns matching this pattern",
-  "exclude_tables_for_sampling": "don't sample tables matching this pattern",
-  "exclude_schemas_for_sampling": "don't sample schemas matching this pattern"
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
+| `--connect_string` | specify connection string instead of individual fields |
+| `--account` | account name |
+| `--db` | database name |
+| `--warehouse` | warehouse name |
+| `--role` | role name |
+| `--user` | user name |
+| `--pass` | password |
+| `--no_column_samples` | if set, will not sample columns |
+| `--exclude_columns` | don't index columns matching this pattern |
+| `--exclude_tables` | don't index tables matching this pattern |
+| `--exclude_schemas` | don't index schemas matching this pattern |
+| `--exclude_columns_for_sampling` | don't sample columns matching this pattern |
+| `--exclude_tables_for_sampling` | don't sample tables matching this pattern |
+| `--exclude_schemas_for_sampling` | don't sample schemas matching this pattern |
 
 #### Examples
 
@@ -477,15 +477,15 @@ Delete a database connection.
 
 #### Parameters
 
-[
-  "url - the database key to be deleted."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| url - the database key to be deleted. | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
 
 ---
 
@@ -495,9 +495,9 @@ Activate a database for use in generating queries and getting table information.
 
 #### Parameters
 
-[
-  "url - URL of the database to activate (can be found by running 'waii database list')"
-]
+| Name | Type | Description |
+|------|------|-------------|
+| url - URL of the database to activate (can be found by running 'waii database list') | | |
 
 #### Examples
 
@@ -517,9 +517,9 @@ Describe the current database.
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
 
 ---
 
@@ -529,14 +529,14 @@ Extract database documentation.
 
 #### Options
 
-{
-  "url": "Web URL to extract documentation from.",
-  "file": "File path to extract documentation from.",
-  "doc_type": "Content type of the file, text/html, etc.",
-  "schemas": "Comma separated list of schemas to extract documentation from. If not provided, will search in all schemas.",
-  "tables": "Comma separated list of tables to extract documentation from. If schema is not provided, will search in all tables.",
-  "update": "If set to true, will update the existing semantic context, default is false."
-}
+| Option | Description |
+|---------|-------------|
+| `--url` | Web URL to extract documentation from. |
+| `--file` | File path to extract documentation from. |
+| `--doc_type` | Content type of the file, text/html, etc. |
+| `--schemas` | Comma separated list of schemas to extract documentation from. If not provided, will search in all schemas. |
+| `--tables` | Comma separated list of tables to extract documentation from. If schema is not provided, will search in all tables. |
+| `--update` | If set to true, will update the existing semantic context, default is false. |
 
 #### Examples
 
@@ -577,13 +577,13 @@ List all semantic context of the current database.
 
 #### Options
 
-{
-  "limit": "How many statements to fetch",
-  "offset": "Which statement to start with",
-  "search": "Which string to search for in the statements",
-  "always_include": "Filter that decides which type of statement to fetch",
-  "format": "Choose the format of the response: text or json."
-}
+| Option | Description |
+|---------|-------------|
+| `--limit` | How many statements to fetch |
+| `--offset` | Which statement to start with |
+| `--search` | Which string to search for in the statements |
+| `--always_include` | Filter that decides which type of statement to fetch |
+| `--format` | Choose the format of the response: text or json. |
 
 ---
 
@@ -593,20 +593,20 @@ Create a new semantic statement in the semantic context.
 
 #### Parameters
 
-[
-  ""
-]
+| Name | Type | Description |
+|------|------|-------------|
+|  | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json.",
-  "scope": "The scope of the statement: [[[[\<db\>].\<schema\>].\<table\>].\<column\>]",
-  "labels": "Comma separated list of labels for the statement: 'performance, finance'",
-  "always_include": "Whether the statement should be dynamically selected by query or always included.",
-  "lookup_summaries": "Comma separated list of summaries to use.",
-  "summarization_prompt": "Prompt to be used to extract information when the statement is used."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
+| `--scope` | The scope of the statement: [[[[\<db\>].\<schema\>].\<table\>].\<column\>] |
+| `--labels` | Comma separated list of labels for the statement: 'performance, finance' |
+| `--always_include` | Whether the statement should be dynamically selected by query or always included. |
+| `--lookup_summaries` | Comma separated list of summaries to use. |
+| `--summarization_prompt` | Prompt to be used to extract information when the statement is used. |
 
 ---
 
@@ -616,15 +616,15 @@ Delete a statement from the semantic context.
 
 #### Parameters
 
-[
-  "uuid of the statement to be deleted."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| uuid of the statement to be deleted. | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
 
 ---
 
@@ -649,15 +649,15 @@ Get a generated description of a schema.
 
 #### Parameters
 
-[
-  "schema_name - name of the schema to describe"
-]
+| Name | Type | Description |
+|------|------|-------------|
+| schema_name - name of the schema to describe | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json"
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json |
 
 #### Examples
 
@@ -700,9 +700,9 @@ Show all available schemas.
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
 
 ---
 
@@ -712,10 +712,10 @@ Update the textual description of a schema.
 
 #### Parameters
 
-[
-  "\<db\>.\<schema\> - name of the schema to change",
-  "description - description to use."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| \<db\>.\<schema\> - name of the schema to change | | |
+| description - description to use. | | |
 
 ---
 
@@ -725,10 +725,10 @@ Update the common questions stored for a schema.
 
 #### Parameters
 
-[
-  "\<db\>.\<schema\> - name of the schema to change",
-  "questions - three individual questions to use."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| \<db\>.\<schema\> - name of the schema to change | | |
+| questions - three individual questions to use. | | |
 
 ---
 
@@ -738,10 +738,10 @@ Update the textual summary of a schema.
 
 #### Parameters
 
-[
-  "\<db\>.\<schema\> - name of the schema to change",
-  "description - description to use."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| \<db\>.\<schema\> - name of the schema to change | | |
+| description - description to use. | | |
 
 ---
 
@@ -751,17 +751,17 @@ Create SQL statement that migrates all table of a schema from one database to an
 
 #### Parameters
 
-[
-  "\<db\>.\<schema\> - name of the schema to migrate",
-  "\<db\>.\<schema\> - destination schema."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| \<db\>.\<schema\> - name of the schema to migrate | | |
+| \<db\>.\<schema\> - destination schema. | | |
 
 #### Options
 
-{
-  "source": "key of the source database, see 'waii database list' for options",
-  "destination": "key of the destination database."
-}
+| Option | Description |
+|---------|-------------|
+| `--source` | key of the source database, see 'waii database list' for options |
+| `--destination` | key of the destination database. |
 
 ---
 
@@ -774,15 +774,15 @@ Show the details of a table.
 
 #### Parameters
 
-[
-  "\<db\>.\<schema\>.\<table\> - table name of the table to describe."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| \<db\>.\<schema\>.\<table\> - table name of the table to describe. | | |
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json."
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
 
 ---
 
@@ -792,9 +792,9 @@ List all tables in the current database.
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json"
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json |
 
 #### Examples
 
@@ -832,10 +832,10 @@ Update the textual description of a table.
 
 #### Parameters
 
-[
-  "\<db\>.\<schema\>.\<table\> - name of the table to change",
-  "description - description to use."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| \<db\>.\<schema\>.\<table\> - name of the table to change | | |
+| description - description to use. | | |
 
 ---
 
@@ -845,17 +845,17 @@ Create SQL statement that migrates a table from one database to another.
 
 #### Parameters
 
-[
-  "\<db\>.\<schema\>.\<table\> - name of the table to migrate",
-  "\<db\>.\<schema\> - destination schema."
-]
+| Name | Type | Description |
+|------|------|-------------|
+| \<db\>.\<schema\>.\<table\> - name of the table to migrate | | |
+| \<db\>.\<schema\> - destination schema. | | |
 
 #### Options
 
-{
-  "source": "key of the source database, see 'waii database list' for options",
-  "destination": "key of the destination database."
-}
+| Option | Description |
+|---------|-------------|
+| `--source` | key of the source database, see 'waii database list' for options |
+| `--destination` | key of the destination database. |
 
 ---
 
@@ -874,11 +874,11 @@ Show the query history.
 
 #### Options
 
-{
-  "format": "choose the format of the response: text or json.",
-  "limit": "choose how many items to list.",
-  "liked": "only display liked queries"
-}
+| Option | Description |
+|---------|-------------|
+| `--format` | choose the format of the response: text or json. |
+| `--limit` | choose how many items to list. |
+| `--liked` | only display liked queries |
 
 ---
 
@@ -891,13 +891,9 @@ Create a new access key for a user.
 
 #### Parameters
 
-[
-  {
-    "name": "name",
-    "type": "string",
-    "description": "The name of the access key to create."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| name | string | The name of the access key to create. |
 
 ---
 
@@ -913,13 +909,9 @@ Delete specified access keys for the user.
 
 #### Parameters
 
-[
-  {
-    "name": "names",
-    "type": "string[]",
-    "description": "An array of strings denoting the names of the access keys to be deleted."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| names | string[] | An array of strings denoting the names of the access keys to be deleted. |
 
 ---
 
@@ -935,10 +927,10 @@ Update the user's configuration settings.
 
 #### Options
 
-{
-  "key=value": "Specify key-value pairs to update in the configuration.",
-  "key=delete": "Specify keys to delete from the configuration."
-}
+| Option | Description |
+|---------|-------------|
+| `--key=value` | Specify key-value pairs to update in the configuration. |
+| `--key=delete` | Specify keys to delete from the configuration. |
 
 ---
 
@@ -948,23 +940,19 @@ Create a new user.
 
 #### Parameters
 
-[
-  {
-    "name": "userId",
-    "type": "string",
-    "description": "The unique ID of the user to be created."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| userId | string | The unique ID of the user to be created. |
 
 #### Options
 
-{
-  "name": "The display name of the user.",
-  "tenant_id": "The tenant ID of the user.",
-  "org_id": "The organization ID of the user.",
-  "variables": "A JSON string representing the user's variables.",
-  "roles": "A comma-separated list of roles assigned to the user."
-}
+| Option | Description |
+|---------|-------------|
+| `--name` | The display name of the user. |
+| `--tenant_id` | The tenant ID of the user. |
+| `--org_id` | The organization ID of the user. |
+| `--variables` | A JSON string representing the user's variables. |
+| `--roles` | A comma-separated list of roles assigned to the user. |
 
 ---
 
@@ -974,13 +962,9 @@ Delete an existing user.
 
 #### Parameters
 
-[
-  {
-    "name": "userId",
-    "type": "string",
-    "description": "The user ID of the user to be deleted."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| userId | string | The user ID of the user to be deleted. |
 
 ---
 
@@ -990,23 +974,19 @@ Update information about an existing user.
 
 #### Parameters
 
-[
-  {
-    "name": "userId",
-    "type": "string",
-    "description": "The unique ID of the user to be updated."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| userId | string | The unique ID of the user to be updated. |
 
 #### Options
 
-{
-  "name": "The display name of the user.",
-  "tenant_id": "The tenant ID of the user.",
-  "org_id": "The organization ID of the user.",
-  "variables": "A JSON string representing the user's variables.",
-  "roles": "A comma-separated list of roles assigned to the user."
-}
+| Option | Description |
+|---------|-------------|
+| `--name` | The display name of the user. |
+| `--tenant_id` | The tenant ID of the user. |
+| `--org_id` | The organization ID of the user. |
+| `--variables` | A JSON string representing the user's variables. |
+| `--roles` | A comma-separated list of roles assigned to the user. |
 
 ---
 
@@ -1016,9 +996,9 @@ Retrieve a list of users.
 
 #### Options
 
-{
-  "lookup_org_id": "The organization ID for which the users are to be retrieved."
-}
+| Option | Description |
+|---------|-------------|
+| `--lookup_org_id` | The organization ID for which the users are to be retrieved. |
 
 ---
 
@@ -1028,21 +1008,17 @@ Create a new tenant.
 
 #### Parameters
 
-[
-  {
-    "name": "tenantId",
-    "type": "string",
-    "description": "The unique ID of the tenant to be created."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| tenantId | string | The unique ID of the tenant to be created. |
 
 #### Options
 
-{
-  "name": "The display name of the tenant.",
-  "org_id": "The organization ID of the tenant.",
-  "variables": "A JSON string representing the tenant's variables."
-}
+| Option | Description |
+|---------|-------------|
+| `--name` | The display name of the tenant. |
+| `--org_id` | The organization ID of the tenant. |
+| `--variables` | A JSON string representing the tenant's variables. |
 
 ---
 
@@ -1052,21 +1028,17 @@ Update an existing tenant.
 
 #### Parameters
 
-[
-  {
-    "name": "tenantId",
-    "type": "string",
-    "description": "The unique ID of the tenant to be updated."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| tenantId | string | The unique ID of the tenant to be updated. |
 
 #### Options
 
-{
-  "name": "The display name of the tenant.",
-  "org_id": "The organization ID of the tenant.",
-  "variables": "A JSON string representing the tenant's variables."
-}
+| Option | Description |
+|---------|-------------|
+| `--name` | The display name of the tenant. |
+| `--org_id` | The organization ID of the tenant. |
+| `--variables` | A JSON string representing the tenant's variables. |
 
 ---
 
@@ -1076,13 +1048,9 @@ Delete an existing tenant.
 
 #### Parameters
 
-[
-  {
-    "name": "tenantId",
-    "type": "string",
-    "description": "The ID of the tenant to be deleted."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| tenantId | string | The ID of the tenant to be deleted. |
 
 ---
 
@@ -1092,9 +1060,9 @@ Retrieve a list of tenants.
 
 #### Options
 
-{
-  "lookup_org_id": "The organization ID for which the tenants are to be retrieved."
-}
+| Option | Description |
+|---------|-------------|
+| `--lookup_org_id` | The organization ID for which the tenants are to be retrieved. |
 
 ---
 
@@ -1104,26 +1072,16 @@ Create a new organization.
 
 #### Parameters
 
-[
-  {
-    "name": "organizationId",
-    "type": "string",
-    "description": "The unique ID of the organization to be created."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| organizationId | string | The unique ID of the organization to be created. |
 
 #### Options
 
-{
-  "name": {
-    "type": "string",
-    "description": "The display name of the organization."
-  },
-  "variables": {
-    "type": "string",
-    "description": "A JSON string representing key-value pairs of organization variables."
-  }
-}
+| Option | Description |
+|---------|-------------|
+| `--name` | The display name of the organization. |
+| `--variables` | A JSON string representing key-value pairs of organization variables. |
 
 ---
 
@@ -1133,26 +1091,16 @@ Update an existing organization.
 
 #### Parameters
 
-[
-  {
-    "name": "organizationId",
-    "type": "string",
-    "description": "The unique ID of the organization to be updated."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| organizationId | string | The unique ID of the organization to be updated. |
 
 #### Options
 
-{
-  "name": {
-    "type": "string",
-    "description": "The display name of the organization."
-  },
-  "variables": {
-    "type": "string",
-    "description": "A JSON string representing key-value pairs of organization variables."
-  }
-}
+| Option | Description |
+|---------|-------------|
+| `--name` | The display name of the organization. |
+| `--variables` | A JSON string representing key-value pairs of organization variables. |
 
 ---
 
@@ -1162,13 +1110,9 @@ Delete an existing organization.
 
 #### Parameters
 
-[
-  {
-    "name": "organizationId",
-    "type": "string",
-    "description": "The unique ID of the organization to be deleted."
-  }
-]
+| Name | Type | Description |
+|------|------|-------------|
+| organizationId | string | The unique ID of the organization to be deleted. |
 
 ---
 
