@@ -17,7 +17,7 @@ import { ArgumentError, CmdParams } from './cmd-line-parser';
 import { queryCommands } from './query-commands';
 import { Table } from 'console-table-printer';
 import SemanticContext, {SemanticStatement} from "waii-sdk-js/dist/clients/semantic-context/src/SemanticContext";
-import { WaiiRoles, ROLE_RANKS } from './common'
+import { WaiiRoles, ROLE_RANKS, WaiiPermissions } from './common'
 import { UserModel } from './user-commands'
 
 let rl: readline.ReadLine | null = null;
@@ -196,7 +196,7 @@ const printConnectors = (connectors?: DBConnection[], status?: {
 
 const getOrgDBInfo = async (dbToUserMap: Map<string, UserModel[]>, dbMap: Map<string, DBConnection>, status: {
     [key: string]: DBConnectionIndexingStatus
-}, currentUserId: string, org_id?: string) => {
+}, currentUserId: string, checkRole: string, org_id?: string) => {
     let otherAdmins = 0;
     let users = await WAII.User.listUsers({
         lookup_org_id: org_id
@@ -205,7 +205,7 @@ const getOrgDBInfo = async (dbToUserMap: Map<string, UserModel[]>, dbMap: Map<st
         let skipUser = false;
         if(user.roles) {
             for(let role of user.roles) {
-                if(role === WaiiRoles.WAII_SUPER_ADMIN_USER && user.id !== currentUserId) {
+                if(role === checkRole && user.id !== currentUserId) {
                     skipUser = true;
                     otherAdmins += 1;
                 }
@@ -219,7 +219,7 @@ const getOrgDBInfo = async (dbToUserMap: Map<string, UserModel[]>, dbMap: Map<st
             var result = await WAII.Database.getConnections({});
         } else {
             WAII.HttpClient.setImpersonateUserId(user.id)
-            var result = await WAII.Database.getConnections({impersonate_as_user_id: user.id});
+            var result = await WAII.Database.getConnections({});
             WAII.HttpClient.setImpersonateUserId(null)
         }
         if(result.connectors) {
@@ -262,8 +262,8 @@ const databaseListDoc = {
 </code>`
 };
 const databaseList = async (params: CmdParams) => {
+    let userInfo = await WAII.User.getInfo({});
     if('all_users' in  params.opts) {
-        let userInfo = await WAII.User.getInfo({});
         let currentUserRole = userInfo.roles[0];
         for(const role in userInfo.roles) {
             if(ROLE_RANKS[role] > ROLE_RANKS[currentUserRole]) {
@@ -281,7 +281,7 @@ const databaseList = async (params: CmdParams) => {
                 } = {};
                 let orgsInfo = await WAII.User.listOrganizations({});
                 for(const org of orgsInfo.organizations) {
-                    otherSuperAdmins += await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id, org.id);
+                    otherSuperAdmins += await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id, WaiiRoles.WAII_SUPER_ADMIN_USER, org.id);
                 }
                 printConnectors(Array.from(dbMap.values()), status, dbToUserMap);
                 if(otherSuperAdmins !== 0) {
@@ -296,10 +296,10 @@ const databaseList = async (params: CmdParams) => {
                 let status: {
                     [key: string]: DBConnectionIndexingStatus
                 } = {};
-                otherOrgAdmins = await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id);
+                otherOrgAdmins = await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id, WaiiRoles.WAII_ORG_ADMIN_USER);
                 printConnectors(Array.from(dbMap.values()), status, dbToUserMap);
                 if(otherOrgAdmins !== 0) {
-                    console.log(`Skipped Database connections of ${otherOrgAdmins} other super admins`)
+                    console.log(`Skipped Database connections of ${otherOrgAdmins} other org admins`)
                 }
                 break;
             }
@@ -310,8 +310,13 @@ const databaseList = async (params: CmdParams) => {
         }
     } else {
         if('user_id' in params.opts) {
-            let impersonationUserId = params.opts['user_id']
-            WAII.HttpClient.setImpersonateUserId(impersonationUserId);
+            if(userInfo.permissions.indexOf(WaiiPermissions.USAGE_IMPERSONATION) > -1) {
+                let impersonationUserId = params.opts['user_id']
+                WAII.HttpClient.setImpersonateUserId(impersonationUserId);
+            } else {
+                console.error('You do not have permissions to impersonate other users. Unset user_id flag')
+                return;
+            }
         }
         let result = await WAII.Database.getConnections();
         switch (params.opts['format']) {
@@ -385,8 +390,8 @@ async function confirmDelete(): Promise<boolean> {
 }
 
 const databaseDelete = async (params: CmdParams) => {
+    let userInfo = await WAII.User.getInfo({});
     if('all_users' in  params.opts) {
-        let userInfo = await WAII.User.getInfo({});
         let currentUserRole = userInfo.roles[0];
         for(const role in userInfo.roles) {
             if(ROLE_RANKS[role] > ROLE_RANKS[currentUserRole]) {
@@ -404,7 +409,7 @@ const databaseDelete = async (params: CmdParams) => {
                 } = {};
                 let orgsInfo = await WAII.User.listOrganizations({});
                 for(const org of orgsInfo.organizations) {
-                    otherSuperAdmins += await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id, org.id);
+                    otherSuperAdmins += await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id, WaiiRoles.WAII_SUPER_ADMIN_USER, org.id);
                 }
                 printConnectors(Array.from(dbMap.values()), status, dbToUserMap);
                 if(otherSuperAdmins !== 0) {
@@ -412,7 +417,6 @@ const databaseDelete = async (params: CmdParams) => {
                 }
                 const confirmed = await confirmDelete();
                 if (confirmed) {
-                    // postgresql://waii@localhost:5432/waii_sdk_test
                     console.log("Deleting databases...");
                     let userToDB = new Map<string, string[]>();
                     for(const [key, value] of dbToUserMap) {
@@ -449,10 +453,10 @@ const databaseDelete = async (params: CmdParams) => {
                 let status: {
                     [key: string]: DBConnectionIndexingStatus
                 } = {};
-                otherOrgAdmins = await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id);
+                otherOrgAdmins = await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id, WaiiRoles.WAII_ORG_ADMIN_USER);
                 printConnectors(Array.from(dbMap.values()), status, dbToUserMap);
                 if(otherOrgAdmins !== 0) {
-                    console.log(`Skipped Database connections of ${otherOrgAdmins} other super admins`)
+                    console.log(`Skipped Database connections of ${otherOrgAdmins} other org admins`)
                 }
                 const confirmed = await confirmDelete();
                 if (confirmed) {
@@ -493,8 +497,13 @@ const databaseDelete = async (params: CmdParams) => {
         }
     } else {
         if('user_id' in params.opts) {
-            let impersonationUserId = params.opts['user_id']
-            WAII.HttpClient.setImpersonateUserId(impersonationUserId);
+            if(userInfo.permissions.indexOf(WaiiPermissions.USAGE_IMPERSONATION) > -1) {
+                let impersonationUserId = params.opts['user_id']
+                WAII.HttpClient.setImpersonateUserId(impersonationUserId);
+            } else {
+                console.error('You do not have permissions to impersonate other users. Unset user_id flag')
+                return;
+            }
         }
         await getDBConnectionKeyIfNotProvided(params, 'delete');
     
