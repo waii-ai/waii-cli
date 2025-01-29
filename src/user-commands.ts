@@ -2,6 +2,14 @@ import WAII from 'waii-sdk-js';
 import { CmdParams } from './cmd-line-parser';
 import { Table } from 'console-table-printer';
 
+export type UserModel = {
+    id: string;
+    name?: string;
+    tenant_id?: string;
+    org_id?: string;
+    variables?: Record<string, any>;
+    roles?: string[];
+};
 
 /**
  * Create Access Key Command

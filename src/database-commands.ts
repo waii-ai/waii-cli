@@ -1,4 +1,5 @@
-import WAII from 'waii-sdk-js'
+import WAII, { Waii } from 'waii-sdk-js'
+import * as readline from 'readline';
 import {
     DBContentFilterActionType, DocumentContentType,
     Schema,
@@ -16,6 +17,36 @@ import { ArgumentError, CmdParams } from './cmd-line-parser';
 import { queryCommands } from './query-commands';
 import { Table } from 'console-table-printer';
 import SemanticContext, {SemanticStatement} from "waii-sdk-js/dist/clients/semantic-context/src/SemanticContext";
+import { WaiiRoles, ROLE_RANKS } from './common'
+import { UserModel } from './user-commands'
+
+let rl: readline.ReadLine | null = null;
+
+function createInterface() {
+    if (!rl) {
+        rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+        });
+    }
+    return rl;
+}
+
+function closeInterface() {
+    if (rl) {
+        rl.close();
+        rl = null;
+    }
+}
+
+function prompt(message: string): Promise<string> {
+    rl = createInterface();
+    return new Promise<string>((resolve) => {
+        rl?.question(message, (answer: string) => {
+            resolve(answer);
+        });
+    });
+}
 
 const printConnectionSelector = (connectors?: DBConnection[]) => {
     let defaultScope = WAII.Database.getDefaultConnection();
@@ -38,7 +69,7 @@ const printConnectionSelector = (connectors?: DBConnection[]) => {
 
 const printConnectors = (connectors?: DBConnection[], status?: {
     [key: string]: DBConnectionIndexingStatus;
-}) => {
+}, dbToUserMap?: Map<string, UserModel[]>) => {
 
     let defaultScope = WAII.Database.getDefaultConnection();
 
@@ -48,36 +79,62 @@ const printConnectors = (connectors?: DBConnection[], status?: {
     if (connectors) {
         for (const connection of connectors) {
 
-            let columns = [];
-            let row: { [a: string]: string } = {}
+            let dbColumns = [];
+            let dbRow: { [a: string]: string } = {}
 
             if (connection.account_name) {
-                columns.push({ name: 'account', title: 'account_name', alignment: 'left' });
-                row['account'] = connection.account_name;
+                dbColumns.push({ name: 'account', title: 'account_name', alignment: 'left' });
+                dbRow['account'] = connection.account_name;
             }
 
             if (connection.database) {
-                columns.push({ name: 'database', title: 'database', alignment: 'left' });
-                row['database'] = connection.database;
+                dbColumns.push({ name: 'database', title: 'database', alignment: 'left' });
+                dbRow['database'] = connection.database;
             }
 
             if (connection.warehouse) {
-                columns.push({ name: 'warehouse', title: 'warehouse', alignment: 'left' });
-                row['warehouse'] = connection.warehouse;
+                dbColumns.push({ name: 'warehouse', title: 'warehouse', alignment: 'left' });
+                dbRow['warehouse'] = connection.warehouse;
             }
 
             if (connection.role) {
-                columns.push({ name: 'role', title: 'role', alignment: 'left' });
-                row['role'] = connection.role;
+                dbColumns.push({ name: 'role', title: 'role', alignment: 'left' });
+                dbRow['role'] = connection.role;
             }
 
             if (connection.username) {
-                columns.push({ name: 'user', title: 'username', alignment: 'left' });
-                row['user'] = connection.username;
+                dbColumns.push({ name: 'user', title: 'username', alignment: 'left' });
+                dbRow['user'] = connection.username;
             }
 
-            let p = new Table({ columns });
-            p.addRow(row);
+            let p = new Table({ columns: dbColumns });
+            p.addRow(dbRow);
+
+            let userColumns = [
+                {name: 'user_id', title: 'user_id', alignment: 'left'},
+                {name: 'tenant_id', title: 'tenant_id', alignment: 'left'},
+                {name: 'org_id', title: 'org_id', alignment: 'left'}
+            ];
+            
+            let usersTable = new Table({columns: userColumns})
+
+            if(dbToUserMap) {
+                let usersForDB = dbToUserMap.get(connection.key)
+                if(usersForDB) {
+                    for(let user of usersForDB) {
+                        let userRow: { [a: string]: string } = {}
+                        userRow['user_id'] = user.id;
+                        if(user.org_id) {
+                            userRow['org_id'] = user.org_id;
+                        }
+                        if(user.tenant_id)  {
+                            userRow['tenant_id'] = user.tenant_id;
+                        }
+                        usersTable.addRow(userRow)
+                    }
+                }
+            }
+            
 
             try {
                 let percentage = 1;
@@ -127,10 +184,63 @@ const printConnectors = (connectors?: DBConnection[], status?: {
 
             // Print the table
             p.printTable();
+            // print users table only if databases are being printed for multiple users
+            if(dbToUserMap) {
+                usersTable.printTable();
+            }
 
             console.log("\n")
         }
     }
+}
+
+const getOrgDBInfo = async (dbToUserMap: Map<string, UserModel[]>, dbMap: Map<string, DBConnection>, status: {
+    [key: string]: DBConnectionIndexingStatus
+}, currentUserId: string, org_id?: string) => {
+    let otherAdmins = 0;
+    let users = await WAII.User.listUsers({
+        lookup_org_id: org_id
+    });
+    for(let user of users.users) {
+        let skipUser = false;
+        if(user.roles) {
+            for(let role of user.roles) {
+                if(role === WaiiRoles.WAII_SUPER_ADMIN_USER && user.id !== currentUserId) {
+                    skipUser = true;
+                    otherAdmins += 1;
+                }
+            }
+        }
+        if(skipUser) {
+            continue;
+        }
+
+        if(user.id === currentUserId) {
+            var result = await WAII.Database.getConnections({});
+        } else {
+            WAII.HttpClient.setImpersonateUserId(user.id)
+            var result = await WAII.Database.getConnections({impersonate_as_user_id: user.id});
+            WAII.HttpClient.setImpersonateUserId(null)
+        }
+        if(result.connectors) {
+            for(let conn of result.connectors) {
+                if(!dbMap.has(conn.key)) {
+                    dbMap.set(conn.key, conn);
+                }
+                if(!dbToUserMap.has(conn.key)) {
+                    dbToUserMap.set(conn.key, []);
+                }
+                dbToUserMap.set(conn.key, dbToUserMap.get(conn.key)!.concat(user));
+            };
+        }
+        if(result.connector_status) {
+            for (const [key, value] of Object.entries(result.connector_status)) {
+                status[key] = value; 
+            }
+        }
+
+    }
+    return otherAdmins;
 }
 
 const databaseListDoc = {
@@ -152,15 +262,68 @@ const databaseListDoc = {
 </code>`
 };
 const databaseList = async (params: CmdParams) => {
-    let result = await WAII.Database.getConnections();
-    switch (params.opts['format']) {
-        case 'json': {
-            console.log(JSON.stringify(result, null, 2));
-            break;
+    if('all_users' in  params.opts) {
+        let userInfo = await WAII.User.getInfo({});
+        let currentUserRole = userInfo.roles[0];
+        for(const role in userInfo.roles) {
+            if(ROLE_RANKS[role] > ROLE_RANKS[currentUserRole]) {
+                currentUserRole = role;
+            }
         }
-        default: {
-            printConnectors(result.connectors, result.connector_status);
+        
+        switch(currentUserRole) {
+            case WaiiRoles.WAII_SUPER_ADMIN_USER: {
+                let dbToUserMap = new Map<string, UserModel[]>();
+                let dbMap = new Map<string, DBConnection>();
+                let otherSuperAdmins = 0;
+                let status: {
+                    [key: string]: DBConnectionIndexingStatus
+                } = {};
+                let orgsInfo = await WAII.User.listOrganizations({});
+                for(const org of orgsInfo.organizations) {
+                    otherSuperAdmins += await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id, org.id);
+                }
+                printConnectors(Array.from(dbMap.values()), status, dbToUserMap);
+                if(otherSuperAdmins !== 0) {
+                    console.log(`Skipped Database connections of ${otherSuperAdmins} other super admins`)
+                }
+                break;
+            }
+            case WaiiRoles.WAII_ORG_ADMIN_USER: {
+                let dbToUserMap = new Map<string, UserModel[]>();
+                let dbMap = new Map<string, DBConnection>();
+                let otherOrgAdmins = 0;
+                let status: {
+                    [key: string]: DBConnectionIndexingStatus
+                } = {};
+                otherOrgAdmins = await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id);
+                printConnectors(Array.from(dbMap.values()), status, dbToUserMap);
+                if(otherOrgAdmins !== 0) {
+                    console.log(`Skipped Database connections of ${otherOrgAdmins} other super admins`)
+                }
+                break;
+            }
+            default: {
+                console.log('unauthorized to view other users\' database connections')
+                break;
+            }
         }
+    } else {
+        if('user_id' in params.opts) {
+            let impersonationUserId = params.opts['user_id']
+            WAII.HttpClient.setImpersonateUserId(impersonationUserId);
+        }
+        let result = await WAII.Database.getConnections();
+        switch (params.opts['format']) {
+            case 'json': {
+                console.log(JSON.stringify(result, null, 2));
+                break;
+            }
+            default: {
+                printConnectors(result.connectors, result.connector_status);
+            }
+        }
+
     }
 }
 
@@ -215,17 +378,135 @@ const getDBConnectionKeyIfNotProvided = async (params: CmdParams, action: string
     }
 }
 
-const databaseDelete = async (params: CmdParams) => {
-    await getDBConnectionKeyIfNotProvided(params, 'delete');
+async function confirmDelete(): Promise<boolean> {
+    const answer = await prompt(`Are you sure you want to delete the above databases ([y/n])?: `);
+    closeInterface();
+    return answer.toLowerCase() === 'y'; // Check for 'y' or 'Y'
+}
 
-    let result = await WAII.Database.modifyConnections({ removed: [params.vals[0]] });
-    switch (params.opts['format']) {
-        case 'json': {
-            console.log(JSON.stringify(result, null, 2));
-            break;
+const databaseDelete = async (params: CmdParams) => {
+    if('all_users' in  params.opts) {
+        let userInfo = await WAII.User.getInfo({});
+        let currentUserRole = userInfo.roles[0];
+        for(const role in userInfo.roles) {
+            if(ROLE_RANKS[role] > ROLE_RANKS[currentUserRole]) {
+                currentUserRole = role;
+            }
         }
-        default: {
-            printConnectors(result.connectors);
+        
+        switch(currentUserRole) {
+            case WaiiRoles.WAII_SUPER_ADMIN_USER: {
+                let dbToUserMap = new Map<string, UserModel[]>();
+                let dbMap = new Map<string, DBConnection>();
+                let otherSuperAdmins = 0;
+                let status: {
+                    [key: string]: DBConnectionIndexingStatus
+                } = {};
+                let orgsInfo = await WAII.User.listOrganizations({});
+                for(const org of orgsInfo.organizations) {
+                    otherSuperAdmins += await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id, org.id);
+                }
+                printConnectors(Array.from(dbMap.values()), status, dbToUserMap);
+                if(otherSuperAdmins !== 0) {
+                    console.log(`Skipped Database connections of ${otherSuperAdmins} other super admins`)
+                }
+                const confirmed = await confirmDelete();
+                if (confirmed) {
+                    // postgresql://waii@localhost:5432/waii_sdk_test
+                    console.log("Deleting databases...");
+                    let userToDB = new Map<string, string[]>();
+                    for(const [key, value] of dbToUserMap) {
+                        for(const user of value) {
+                            if(!userToDB.has(user.id)) {
+                                userToDB.set(user.id, []);
+                            }
+                            userToDB.set(user.id, userToDB.get(user.id)!.concat(key))
+                        }
+                    }
+                    for(const [key, value] of userToDB) {
+                        WAII.HttpClient.setImpersonateUserId(key)
+                        let result = await WAII.Database.modifyConnections({removed: value})
+                        WAII.HttpClient.setImpersonateUserId(null)
+                        switch (params.opts['format']) {
+                            case 'json': {
+                                console.log(JSON.stringify(result, null, 2));
+                                break;
+                            }
+                            default: {
+                                printConnectors(result.connectors, result.connector_status);
+                            }
+                        }
+                    }
+                } else {
+                    console.log("Deletion cancelled.");
+                }
+                break;
+            }
+            case WaiiRoles.WAII_ORG_ADMIN_USER: {
+                let dbToUserMap = new Map<string, UserModel[]>();
+                let dbMap = new Map<string, DBConnection>();
+                let otherOrgAdmins = 0;
+                let status: {
+                    [key: string]: DBConnectionIndexingStatus
+                } = {};
+                otherOrgAdmins = await getOrgDBInfo(dbToUserMap, dbMap, status, userInfo.id);
+                printConnectors(Array.from(dbMap.values()), status, dbToUserMap);
+                if(otherOrgAdmins !== 0) {
+                    console.log(`Skipped Database connections of ${otherOrgAdmins} other super admins`)
+                }
+                const confirmed = await confirmDelete();
+                if (confirmed) {
+                    // postgresql://waii@localhost:5432/waii_sdk_test
+                    console.log("Deleting databases...");
+                    let userToDB = new Map<string, string[]>();
+                    for(const [key, value] of dbToUserMap) {
+                        for(const user of value) {
+                            if(!userToDB.has(user.id)) {
+                                userToDB.set(user.id, []);
+                            }
+                            userToDB.set(user.id, userToDB.get(user.id)!.concat(key))
+                        }
+                    }
+                    for(const [key, value] of userToDB) {
+                        WAII.HttpClient.setImpersonateUserId(key)
+                        let result = await WAII.Database.modifyConnections({removed: value})
+                        WAII.HttpClient.setImpersonateUserId(null)
+                        switch (params.opts['format']) {
+                            case 'json': {
+                                console.log(JSON.stringify(result, null, 2));
+                                break;
+                            }
+                            default: {
+                                printConnectors(result.connectors, result.connector_status);
+                            }
+                        }
+                    }
+                } else {
+                    console.log("Deletion cancelled.");
+                }
+                break;
+            }
+            default: {
+                console.log('unauthorized to view other users\' database connections')
+                break;
+            }
+        }
+    } else {
+        if('user_id' in params.opts) {
+            let impersonationUserId = params.opts['user_id']
+            WAII.HttpClient.setImpersonateUserId(impersonationUserId);
+        }
+        await getDBConnectionKeyIfNotProvided(params, 'delete');
+    
+        let result = await WAII.Database.modifyConnections({ removed: [params.vals[0]] });
+        switch (params.opts['format']) {
+            case 'json': {
+                console.log(JSON.stringify(result, null, 2));
+                break;
+            }
+            default: {
+                printConnectors(result.connectors, result.connector_status);
+            }
         }
     }
 }
