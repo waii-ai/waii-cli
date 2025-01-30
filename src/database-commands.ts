@@ -428,17 +428,12 @@ const databaseDelete = async (params: CmdParams) => {
                         }
                     }
                     for(const [key, value] of userToDB) {
-                        WAII.HttpClient.setImpersonateUserId(key)
-                        let result = await WAII.Database.modifyConnections({removed: value})
-                        WAII.HttpClient.setImpersonateUserId(null)
-                        switch (params.opts['format']) {
-                            case 'json': {
-                                console.log(JSON.stringify(result, null, 2));
-                                break;
-                            }
-                            default: {
-                                printConnectors(result.connectors, result.connector_status);
-                            }
+                        if(key === userInfo.id) {
+                            var result = await WAII.Database.modifyConnections({removed: value})
+                        } else {
+                            WAII.HttpClient.setImpersonateUserId(key)
+                            var result = await WAII.Database.modifyConnections({removed: value})
+                            WAII.HttpClient.setImpersonateUserId(null)
                         }
                     }
                 } else {
