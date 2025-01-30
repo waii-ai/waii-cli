@@ -393,7 +393,7 @@ const databaseDelete = async (params: CmdParams) => {
     let userInfo = await WAII.User.getInfo({});
     if('all_users' in  params.opts) {
         let currentUserRole = userInfo.roles[0];
-        for(const role in userInfo.roles) {
+        for(const role of userInfo.roles) {
             if(ROLE_RANKS[role] > ROLE_RANKS[currentUserRole]) {
                 currentUserRole = role;
             }
@@ -467,9 +467,13 @@ const databaseDelete = async (params: CmdParams) => {
                         }
                     }
                     for(const [key, value] of userToDB) {
-                        WAII.HttpClient.setImpersonateUserId(key)
-                        let result = await WAII.Database.modifyConnections({removed: value})
-                        WAII.HttpClient.setImpersonateUserId(null)
+                        if(key === userInfo.id) {
+                            var result = await WAII.Database.modifyConnections({removed: value})
+                        } else {
+                            WAII.HttpClient.setImpersonateUserId(key)
+                            var result = await WAII.Database.modifyConnections({removed: value})
+                            WAII.HttpClient.setImpersonateUserId(null)
+                        }
                         switch (params.opts['format']) {
                             case 'json': {
                                 console.log(JSON.stringify(result, null, 2));
