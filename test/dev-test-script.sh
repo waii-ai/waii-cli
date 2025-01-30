@@ -37,7 +37,11 @@ run_test "Generate query:" "$prog query create 'give me numbers of columns for e
 
 run_test "Generate query and run it:" "$prog query create 'give me numbers of columns for each table' | $prog query run"
 
-run_test "List database" "$prog database list"
+run_test "List database" "$prog database list --all_users"
+
+run_test "Add database" "$prog database add --connect_string postgresql://waii@localhost:5432/waii_sdk_test2"
+
+run_test "Delete database" "$prog database delete postgresql://waii@localhost:5432/waii_sdk_test2"
 
 run_test "Activate database (snowflake://whathappened@wjhotuk-hdb56222/SNOWFLAKE_SAMPLE_DATA)" \
   "$prog database activate 'snowflake://whathappened@wjhotuk-hdb56222/SNOWFLAKE_SAMPLE_DATA?role=ACCOUNTADMIN&warehouse=COMPUTE_WH' && $prog database describe"
