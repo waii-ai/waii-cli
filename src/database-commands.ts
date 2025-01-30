@@ -205,7 +205,7 @@ const getOrgDBInfo = async (dbToUserMap: Map<string, UserModel[]>, dbMap: Map<st
         let skipUser = false;
         if(user.roles) {
             for(let role of user.roles) {
-                if(role === checkRole && user.id !== currentUserId) {
+                if((role === checkRole && user.id !== currentUserId) || (role === WaiiRoles.WAII_SUPER_ADMIN_USER && checkRole === WaiiRoles.WAII_ORG_ADMIN_USER)) {
                     skipUser = true;
                     otherAdmins += 1;
                 }
@@ -265,7 +265,7 @@ const databaseList = async (params: CmdParams) => {
     let userInfo = await WAII.User.getInfo({});
     if('all_users' in  params.opts) {
         let currentUserRole = userInfo.roles[0];
-        for(const role in userInfo.roles) {
+        for(const role of userInfo.roles) {
             if(ROLE_RANKS[role] > ROLE_RANKS[currentUserRole]) {
                 currentUserRole = role;
             }
