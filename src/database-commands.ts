@@ -250,6 +250,8 @@ const databaseListDoc = {
     stdin: "",
     options: {
         format: "choose the format of the response: text or json.",
+        all_users: "list all database connections (for admins)",
+        user_id: "list database connections by impersonating another user"
     },
     examples: `Example: List all databases
 <code>waii database list</code>
@@ -337,6 +339,8 @@ const databaseDeleteDoc = {
     stdin: "",
     options: {
         format: "choose the format of the response: text or json.",
+        all_users: "delete all database connections (for admins)",
+        user_id: "delete database connections by impersonating another user"
     }
 };
 
