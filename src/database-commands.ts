@@ -19,6 +19,7 @@ import { Table } from 'console-table-printer';
 import SemanticContext, {SemanticStatement} from "waii-sdk-js/dist/clients/semantic-context/src/SemanticContext";
 import { WaiiRoles, ROLE_RANKS, WaiiPermissions } from './common'
 import { UserModel } from './user-commands'
+import { GetUserInfoResponse } from 'waii-sdk-js/dist/clients/user/src/User';
 
 let rl: readline.ReadLine | null = null;
 
@@ -310,10 +311,8 @@ const databaseList = async (params: CmdParams) => {
         }
     } else {
         if('user_id' in params.opts) {
-            if(userInfo.permissions.indexOf(WaiiPermissions.USAGE_IMPERSONATION) > -1) {
-                let impersonationUserId = params.opts['user_id']
-                WAII.HttpClient.setImpersonateUserId(impersonationUserId);
-            } else {
+            let ok = checkAndSetImpersonation(userInfo, params.opts['user_id'])
+            if(!ok) {
                 console.error('You do not have permissions to impersonate other users. Unset user_id flag')
                 return;
             }
@@ -413,32 +412,9 @@ const databaseDelete = async (params: CmdParams) => {
                 }
                 printConnectors(Array.from(dbMap.values()), status, dbToUserMap);
                 if(otherSuperAdmins !== 0) {
-                    console.log(`Skipped Database connections of ${otherSuperAdmins} other super admins`)
+                    console.log(`Skipped Database connections of ${otherSuperAdmins} other super admins`);
                 }
-                const confirmed = await confirmDelete();
-                if (confirmed) {
-                    console.log("Deleting databases...");
-                    let userToDB = new Map<string, string[]>();
-                    for(const [key, value] of dbToUserMap) {
-                        for(const user of value) {
-                            if(!userToDB.has(user.id)) {
-                                userToDB.set(user.id, []);
-                            }
-                            userToDB.set(user.id, userToDB.get(user.id)!.concat(key))
-                        }
-                    }
-                    for(const [key, value] of userToDB) {
-                        if(key === userInfo.id) {
-                            var result = await WAII.Database.modifyConnections({removed: value})
-                        } else {
-                            WAII.HttpClient.setImpersonateUserId(key)
-                            var result = await WAII.Database.modifyConnections({removed: value})
-                            WAII.HttpClient.setImpersonateUserId(null)
-                        }
-                    }
-                } else {
-                    console.log("Deletion cancelled.");
-                }
+                internalDeleteDatabases(dbToUserMap, userInfo.id);
                 break;
             }
             case WaiiRoles.WAII_ORG_ADMIN_USER: {
@@ -453,40 +429,7 @@ const databaseDelete = async (params: CmdParams) => {
                 if(otherOrgAdmins !== 0) {
                     console.log(`Skipped Database connections of ${otherOrgAdmins} other org admins`)
                 }
-                const confirmed = await confirmDelete();
-                if (confirmed) {
-                    // postgresql://waii@localhost:5432/waii_sdk_test
-                    console.log("Deleting databases...");
-                    let userToDB = new Map<string, string[]>();
-                    for(const [key, value] of dbToUserMap) {
-                        for(const user of value) {
-                            if(!userToDB.has(user.id)) {
-                                userToDB.set(user.id, []);
-                            }
-                            userToDB.set(user.id, userToDB.get(user.id)!.concat(key))
-                        }
-                    }
-                    for(const [key, value] of userToDB) {
-                        if(key === userInfo.id) {
-                            var result = await WAII.Database.modifyConnections({removed: value})
-                        } else {
-                            WAII.HttpClient.setImpersonateUserId(key)
-                            var result = await WAII.Database.modifyConnections({removed: value})
-                            WAII.HttpClient.setImpersonateUserId(null)
-                        }
-                        switch (params.opts['format']) {
-                            case 'json': {
-                                console.log(JSON.stringify(result, null, 2));
-                                break;
-                            }
-                            default: {
-                                printConnectors(result.connectors, result.connector_status);
-                            }
-                        }
-                    }
-                } else {
-                    console.log("Deletion cancelled.");
-                }
+                internalDeleteDatabases(dbToUserMap, userInfo.id);
                 break;
             }
             default: {
@@ -496,10 +439,8 @@ const databaseDelete = async (params: CmdParams) => {
         }
     } else {
         if('user_id' in params.opts) {
-            if(userInfo.permissions.indexOf(WaiiPermissions.USAGE_IMPERSONATION) > -1) {
-                let impersonationUserId = params.opts['user_id']
-                WAII.HttpClient.setImpersonateUserId(impersonationUserId);
-            } else {
+            let ok = checkAndSetImpersonation(userInfo, params.opts['user_id'])
+            if(!ok) {
                 console.error('You do not have permissions to impersonate other users. Unset user_id flag')
                 return;
             }
@@ -516,6 +457,42 @@ const databaseDelete = async (params: CmdParams) => {
                 printConnectors(result.connectors, result.connector_status);
             }
         }
+    }
+}
+
+async function checkAndSetImpersonation(currentUserInfo: GetUserInfoResponse, impersonationUserId: string) {
+    if(currentUserInfo.permissions.indexOf(WaiiPermissions.USAGE_IMPERSONATION) > -1) {
+        WAII.HttpClient.setImpersonateUserId(impersonationUserId);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+async function internalDeleteDatabases(dbToUserMap: Map<string, UserModel[]>, currentUserId: string) {
+    const confirmed = await confirmDelete();
+    if (confirmed) {
+        console.log("Deleting databases...");
+        let userToDB = new Map<string, string[]>();
+        for(const [key, value] of dbToUserMap) {
+            for(const user of value) {
+                if(!userToDB.has(user.id)) {
+                    userToDB.set(user.id, []);
+                }
+                userToDB.set(user.id, userToDB.get(user.id)!.concat(key))
+            }
+        }
+        for(const [key, value] of userToDB) {
+            if(key === currentUserId) {
+                var result = await WAII.Database.modifyConnections({removed: value});
+            } else {
+                WAII.HttpClient.setImpersonateUserId(key);
+                var result = await WAII.Database.modifyConnections({removed: value});
+                WAII.HttpClient.setImpersonateUserId(null);
+            }
+        }
+    } else {
+        console.log("Deletion cancelled.");
     }
 }
 
