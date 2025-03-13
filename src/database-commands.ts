@@ -516,34 +516,27 @@ const databaseAddDoc = {
     stdin: "",
     options: {
         format: "choose the format of the response: text or json.",
+        db_type: "type of database (snowflake, postgresql, mysql, oracle, etc.)",
         connect_string: "specify connection string instead of individual fields",
-        account: "account name",
+        account: "account name (required for snowflake)",
         db: "database name",
-        warehouse: "warehouse name",
-        role: "role name",
+        warehouse: "warehouse name (required for snowflake)",
+        role: "role name (required for snowflake)",
         user: "user name",
-        pass: "password",
-        no_column_samples: "if set, will not sample columns",
-        exclude_columns: "don't index columns matching this pattern",
-        exclude_tables: "don't index tables matching this pattern",
-        exclude_schemas: "don't index schemas matching this pattern",
-        exclude_columns_for_sampling: "don't sample columns matching this pattern",
-        exclude_tables_for_sampling: "don't sample tables matching this pattern",
-        exclude_schemas_for_sampling: "don't sample schemas matching this pattern",
+        password: "password",
+        host: "host name (required for postgresql, mysql, oracle, etc.)",
+        port: "port number (optional for postgresql, mysql, oracle, etc.)",
+        path: "path (used for sqlite)",
+        no_column_samples: "if set, will not sample columns"
     },
     examples: `Example: Add a snowflake database
-<code>waii database add --account 'xxxxx-yyyyy' --db '<DB>' --warehouse '<COMPUTE_WH>' --role '<YOUR_SNOWFLAKE_ROLE>' --user '<YOUR_SNOWFLAKE_USER>' --pass '********'</code>
+<code>waii database add --account 'xxxxx-yyyyy' --db '<DB>' --warehouse '<COMPUTE_WH>' --role '<YOUR_SNOWFLAKE_ROLE>' --user '<YOUR_SNOWFLAKE_USER>' --password '********'</code>
 
-Other parameters:
-- \`no_column_samples\`: If set to \`true\`, the column samples will not be fetched. Default is \`false\`.
-- You can also use \`exclude_columns_for_sampling\`, \`exclude_tables_for_sampling\`, \`exclude_schemas_for_sampling\` to exclude some tables, columns, schemas from sampling.
-- You can add multiple patterns, e.g.
+Example: Add a PostgreSQL database
+<code>waii database add --db_type postgresql --host 'localhost' --db 'mydatabase' --user 'dbuser' --password 'password'</code>
 
-<code>
---exclude_columns_for_sampling ".*name.*" --exclude_columns_for_sampling ".*bio.*" --exclude_columns_for_sampling ".*year" --exclude_tables_for_sampling "tv_series"
-</code>
-
-It will exclude all columns contain \`name\`, \`bio\`, \`year\` in their names, and exclude table \`tv_series\`.`
+Example: Add a database using connection string
+<code>waii database add --connect_string 'postgresql://user:password@localhost:5432/mydatabase'</code>`
 };
 
 const _addColFilterForSampling = (filters: DBContentFilter[], params: CmdParams, opt_name: string, filter_scope: DBContentFilterScope) => {
@@ -633,10 +626,10 @@ const databaseAdd = async (params: CmdParams) => {
                 params.opts['user'] = userinfo_arr[0];
             }
             if (userinfo_arr.length > 1) {
-                if (params.opts['pass'] && params.opts['pass'] != userinfo_arr[1]) {
-                    throw new Error("pass is different from password in connect_string");
+                if (params.opts['password'] && params.opts['password'] != userinfo_arr[1]) {
+                    throw new Error("password is different from password in connect_string");
                 }
-                params.opts['pass'] = userinfo_arr[1];
+                params.opts['password'] = userinfo_arr[1];
             }
         }
         if (parsed.host) {
@@ -703,9 +696,9 @@ const databaseAdd = async (params: CmdParams) => {
         let warehouse = params.opts['warehouse']
         let role = params.opts['role']
         let user = params.opts['user']
-        let pass = params.opts['pass']
-        if (!account || !db || !warehouse || !role || !user || !pass) {
-            throw new Error("account, db, warehouse, role, user and pass are required for snowflake");
+        let password = params.opts['password']
+        if (!account || !db || !warehouse || !role || !user || !password) {
+            throw new Error("account, db, warehouse, role, user and password are required for snowflake");
         }
     } else if (db_type === "postgresql" || db_type === "mongodb" || db_type === "mongodb+srv") {
         // check the following parameters
@@ -724,7 +717,7 @@ const databaseAdd = async (params: CmdParams) => {
         warehouse: params.opts['warehouse'],
         role: params.opts['role'],
         username: params.opts['user'],
-        password: params.opts['pass'],
+        password: params.opts['password'],
         path: params.opts['path'],
         host: params.opts['host'],
         port: Number(params.opts['port']),

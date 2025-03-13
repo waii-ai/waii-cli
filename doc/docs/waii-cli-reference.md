@@ -401,6 +401,8 @@ List all the configured databases.
 | Option | Description |
 |---------|-------------|
 | `--format` | choose the format of the response: text or json. |
+| `--all_users` | list all database connections (for admins) |
+| `--user_id` | list database connections by impersonating another user |
 
 #### Examples
 
@@ -432,42 +434,38 @@ Add a database connection.
 | Option | Description |
 |---------|-------------|
 | `--format` | choose the format of the response: text or json. |
+| `--db_type` | type of database (snowflake, postgresql, mysql, oracle, etc.) |
 | `--connect_string` | specify connection string instead of individual fields |
-| `--account` | account name |
+| `--account` | account name (required for snowflake) |
 | `--db` | database name |
-| `--warehouse` | warehouse name |
-| `--role` | role name |
+| `--warehouse` | warehouse name (required for snowflake) |
+| `--role` | role name (required for snowflake) |
 | `--user` | user name |
-| `--pass` | password |
+| `--password` | password |
+| `--host` | host name (required for postgresql, mysql, oracle, etc.) |
+| `--port` | port number (optional for postgresql, mysql, oracle, etc.) |
+| `--path` | path (used for sqlite) |
 | `--no_column_samples` | if set, will not sample columns |
-| `--exclude_columns` | don't index columns matching this pattern |
-| `--exclude_tables` | don't index tables matching this pattern |
-| `--exclude_schemas` | don't index schemas matching this pattern |
-| `--exclude_columns_for_sampling` | don't sample columns matching this pattern |
-| `--exclude_tables_for_sampling` | don't sample tables matching this pattern |
-| `--exclude_schemas_for_sampling` | don't sample schemas matching this pattern |
 
 #### Examples
 
 Example: Add a snowflake database
 ```
-waii database add --account 'xxxxx-yyyyy' --db '<DB>' --warehouse '<COMPUTE_WH>' --role '<YOUR_SNOWFLAKE_ROLE>' --user '<YOUR_SNOWFLAKE_USER>' --pass '********'
+waii database add --account 'xxxxx-yyyyy' --db '<DB>' --warehouse '<COMPUTE_WH>' --role '<YOUR_SNOWFLAKE_ROLE>' --user '<YOUR_SNOWFLAKE_USER>' --password '********'
 ```
 
 
-Other parameters:
-- `no_column_samples`: If set to `true`, the column samples will not be fetched. Default is `false`.
-- You can also use `exclude_columns_for_sampling`, `exclude_tables_for_sampling`, `exclude_schemas_for_sampling` to exclude some tables, columns, schemas from sampling.
-- You can add multiple patterns, e.g.
-
+Example: Add a PostgreSQL database
 ```
-
---exclude_columns_for_sampling ".*name.*" --exclude_columns_for_sampling ".*bio.*" --exclude_columns_for_sampling ".*year" --exclude_tables_for_sampling "tv_series"
-
+waii database add --db_type postgresql --host 'localhost' --db 'mydatabase' --user 'dbuser' --password 'password'
 ```
 
 
-It will exclude all columns contain `name`, `bio`, `year` in their names, and exclude table `tv_series`.
+Example: Add a database using connection string
+```
+waii database add --connect_string 'postgresql://user:password@localhost:5432/mydatabase'
+```
+
 
 ---
 
@@ -486,6 +484,8 @@ Delete a database connection.
 | Option | Description |
 |---------|-------------|
 | `--format` | choose the format of the response: text or json. |
+| `--all_users` | delete all database connections (for admins) |
+| `--user_id` | delete database connections by impersonating another user |
 
 ---
 
