@@ -61,6 +61,9 @@ The WAII CLI provides a command-line interface for interacting with WAII service
   - [`waii user update_org`](#waii-user-update_org)
   - [`waii user delete_org`](#waii-user-delete_org)
   - [`waii user list_org`](#waii-user-list_org)
+- [semantic-layer](#semantic-layer)
+  - [`waii semantic-layer export`](#waii-semantic-layer-export)
+  - [`waii semantic-layer import`](#waii-semantic-layer-import)
 - [docs](#docs)
   - [`waii docs generate`](#waii-docs-generate)
 
@@ -1119,6 +1122,49 @@ Delete an existing organization.
 ### `waii user list_org`
 
 List all organizations.
+
+---
+
+
+## semantic-layer
+
+### `waii semantic-layer export`
+
+Export semantic layer configuration for a database connection.
+
+#### Options
+
+| Option | Description |
+|---------|-------------|
+| `--db_conn_key` | Required. Database connection key |
+| `--file` | Path to the output file. If not specified, prints to stdout. |
+| `--format` | Output format: yaml (default) or json. |
+| `--search_context` | Optional JSON string with search context parameters |
+| `--poll_interval` | Interval in ms to poll for export status (default: 1000) |
+| `--timeout` | Timeout in ms for export operation (default: 60 seconds) |
+| `--max_retries` | Maximum number of retries when operation status returns 'not_exists' (default: 3). This can happen when the server has already processed and cleared the operation. |
+| `--verbose` | Show verbose debug information and display neatly formatted statistics |
+
+---
+
+### `waii semantic-layer import`
+
+Import semantic layer configuration for a database connection.
+
+#### Options
+
+| Option | Description |
+|---------|-------------|
+| `--db_conn_key` | Required. Database connection key |
+| `--file` | Required. Path to the input file containing the configuration |
+| `--format` | Input format: auto (default), yaml, or json |
+| `--schema_mapping` | Optional JSON string with schema mapping |
+| `--database_mapping` | Optional JSON string with database mapping |
+| `--detailed` | Show full JSON response from server |
+| `--poll_interval` | Interval in ms to poll for import status (default: 1000) |
+| `--timeout` | Timeout in ms for import operation (default: 5 minutes) |
+| `--max_retries` | Maximum number of retries when operation status returns 'not_exists' (default: 5). This can happen when the server has already processed and cleared the operation. |
+| `--verbose` | Show verbose debug information and display detailed import statistics |
 
 ---
 
