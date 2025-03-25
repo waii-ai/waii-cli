@@ -168,8 +168,8 @@ const semanticLayerExport = async (params: CmdParams) => {
     }
     
     const dbConnKey = params.opts['db_conn_key'];
-    const searchContext: SearchContext = params.opts['search_context'] ? 
-        JSON.parse(params.opts['search_context']) : {};
+    const searchContext: SearchContext[] = params.opts['search_context'] ? 
+        JSON.parse(params.opts['search_context']) : [];
     const format = params.opts['format'] || 'yaml';
     const pollInterval = params.opts['poll_interval'] ? 
         parseInt(params.opts['poll_interval']) : 1000;
