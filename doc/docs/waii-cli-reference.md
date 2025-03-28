@@ -1141,7 +1141,7 @@ Export semantic layer configuration for a database connection.
 | `--format` | Output format: yaml (default) or json. |
 | `--search_context` | Optional JSON string with search context parameters |
 | `--poll_interval` | Interval in ms to poll for export status (default: 1000) |
-| `--timeout` | Timeout in ms for export operation (default: 60 seconds) |
+| `--timeout` | Timeout in ms for export operation (default: 300 seconds) |
 | `--max_retries` | Maximum number of retries when operation status returns 'not_exists' (default: 3). This can happen when the server has already processed and cleared the operation. |
 | `--verbose` | Show verbose debug information and display neatly formatted statistics |
 
@@ -1160,10 +1160,12 @@ Import semantic layer configuration for a database connection.
 | `--format` | Input format: auto (default), yaml, or json |
 | `--schema_mapping` | Optional JSON string with schema mapping |
 | `--database_mapping` | Optional JSON string with database mapping |
+| `--strict_mode` | Enable strict validation of the import configuration (default: false) |
+| `--dry_run_mode` | Simulate the import without making actual changes and show detailed output (default: false) |
 | `--detailed` | Show full JSON response from server |
 | `--poll_interval` | Interval in ms to poll for import status (default: 1000) |
 | `--timeout` | Timeout in ms for import operation (default: 5 minutes) |
-| `--max_retries` | Maximum number of retries when operation status returns 'not_exists' (default: 5). This can happen when the server has already processed and cleared the operation. |
+| `--max_retries` | Maximum number of retries when operation status returns 'not_exists' (default: 5). |
 | `--verbose` | Show verbose debug information and display detailed import statistics |
 
 ---
