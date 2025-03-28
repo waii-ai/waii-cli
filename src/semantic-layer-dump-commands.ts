@@ -174,7 +174,7 @@ const semanticLayerExport = async (params: CmdParams) => {
     const pollInterval = params.opts['poll_interval'] ? 
         parseInt(params.opts['poll_interval']) : 1000;
     const timeout = params.opts['timeout'] ? 
-        parseInt(params.opts['timeout']) : 60 * 1000; // 1 minute default timeout
+        parseInt(params.opts['timeout']) : 5 * 60 * 1000; // 5 minutes default timeout
     const verbose = 'verbose' in params.opts;
     const maxRetries = params.opts['max_retries'] ? 
         parseInt(params.opts['max_retries']) : 3; // Default to 3 retries
@@ -237,7 +237,7 @@ const semanticLayerExport = async (params: CmdParams) => {
                     
                     // Break out of the loop since we've succeeded
                     // We must save the result to 'result' variable before breaking
-                    // because the server removes the operation from storage once queried
+                    // because the server removes the operation from storage once queried (for now)
                     break;
                 } else if (status === OperationStatus.FAILED) {
                     process.stdout.write("\n");
