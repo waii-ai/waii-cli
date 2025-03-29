@@ -9,6 +9,7 @@ import { parseInput, CmdParams, ArgumentError } from "./cmd-line-parser";
 import { databaseCommands, schemaCommands, tableCommands } from "./database-commands";
 import { queryCommands } from "./query-commands";
 import { semanticCommands } from "./semantic-commands";
+import { semanticLayerDumpCommands } from "./semantic-layer-dump-commands";
 import { historyCommands } from './history-commands';
 import { userCommands } from './user-commands';
 import { generateCliReference } from './doc-generator';
@@ -87,6 +88,7 @@ export const callTree = {
     table: tableCommands,
     history: historyCommands,
     user: userCommands,
+    "semantic-layer": semanticLayerDumpCommands,
     docs: {
         generate: {
             fn: async () => {
@@ -210,6 +212,7 @@ export {
     queryCommands,
     databaseCommands,
     semanticCommands,
+    semanticLayerDumpCommands,
     schemaCommands,
     tableCommands,
     historyCommands,
