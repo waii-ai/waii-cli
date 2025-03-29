@@ -480,8 +480,9 @@ const semanticLayerImportDoc = {
         format: "Input format: auto (default), yaml, or json",
         schema_mapping: "Optional JSON string with schema mapping",
         database_mapping: "Optional JSON string with database mapping",
-        strict_mode: "Enable strict validation of the import configuration (default: false)",
-        dry_run_mode: "Simulate the import without making actual changes and show detailed output (default: false)",
+        search_context: "Optional JSON string with search context parameters to specify which parts of the semantic layer to import",
+        strict_mode: "When true, Waii will delete all existing configurations in the target connection and import all configurations from the dump. When false, existing configurations will be preserved and only additional configurations from the dump will be imported (default: false)",
+        dry_run_mode: "When true, the system will validate and report what changes would be made without applying them (default: false)",
         detailed: "Show full JSON response from server",
         poll_interval: "Interval in ms to poll for import status (default: 1000)",
         timeout: "Timeout in ms for import operation (default: 5 minutes)",
@@ -553,6 +554,10 @@ const semanticLayerImport = async (params: CmdParams) => {
         const databaseMapping = params.opts['database_mapping'] ? 
             JSON.parse(params.opts['database_mapping']) : {};
         
+        // Search context (optional)
+        const searchContext = params.opts['search_context'] ? 
+            JSON.parse(params.opts['search_context']) : [];
+            
         // Start import operation
         console.log(`Starting semantic layer import for database connection '${dbConnKey}'...`);
         
@@ -564,6 +569,11 @@ const semanticLayerImport = async (params: CmdParams) => {
             strict_mode: strictMode,
             dry_run_mode: dryRunMode
         };
+        
+        // Add search_context if provided
+        if (searchContext.length > 0) {
+            importRequest.search_context = searchContext;
+        }
         
         if (verbose) {
             console.log(`Import request: ${JSON.stringify(importRequest, null, 2)}`);
