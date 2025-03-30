@@ -169,7 +169,11 @@ const semanticLayerExport = async (params: CmdParams) => {
     
     const dbConnKey = params.opts['db_conn_key'];
     const searchContext: SearchContext[] = params.opts['search_context'] ? 
-        JSON.parse(params.opts['search_context']) : [];
+        JSON.parse(params.opts['search_context']) : [{
+            db_name: "*",
+            schema_name: "*",
+            table_name: "*"
+        }];
     const format = params.opts['format'] || 'yaml';
     const pollInterval = params.opts['poll_interval'] ? 
         parseInt(params.opts['poll_interval']) : 1000;
@@ -364,105 +368,153 @@ function formatImportResults(info: any, verbose: boolean = false, isDryRun: bool
         output.push(`    Imported: ${imported}`);
         output.push(`    Ignored: ${ignored}`);
         
-        // If verbose mode is on or this is a dry run, list the specific objects
-        if (verbose || isDryRun) {
-            if (imported > 0 && Array.isArray(categoryData.imported)) {
-                output.push('\n    Imported objects:');
-                
-                // For columns category, limit the number shown to avoid excessive output
-                const MAX_COLUMNS_TO_SHOW = 20;
-                
-                if (category === 'columns' && categoryData.imported.length > MAX_COLUMNS_TO_SHOW) {
-                    // Show sample of columns with a message about the total
-                    output.push(`      Showing ${MAX_COLUMNS_TO_SHOW} of ${categoryData.imported.length} columns:`);
-                    
-                    categoryData.imported.slice(0, MAX_COLUMNS_TO_SHOW).forEach((item: any) => {
-                        if (item.name) {
-                            const tablePrefix = item.table ? `${item.table}.` : '';
-                            output.push(`      - Column: ${tablePrefix}${item.name}`);
-                        }
-                    });
-                    
-                    output.push(`      ... and ${categoryData.imported.length - MAX_COLUMNS_TO_SHOW} more columns`);
-                } else {
-                    // Normal handling for other categories or when columns count is small
-                    categoryData.imported.forEach((item: any) => {
-                        // Different handling based on object type
-                        if (category === 'schema_definitions' && item.name) {
-                            output.push(`      - Schema: ${item.name}`);
-                        } else if (category === 'tables' && item.name) {
-                            const schemaPrefix = item.schema ? `${item.schema}.` : '';
-                            output.push(`      - Table: ${schemaPrefix}${item.name}`);
-                        } else if (category === 'columns' && item.name) {
-                            const tablePrefix = item.table ? `${item.table}.` : '';
-                            output.push(`      - Column: ${tablePrefix}${item.name}`);
-                        } else if (category === 'semantic_contexts' && item.statement) {
-                            const statementPreview = item.statement.length > 50 ? 
-                                `${item.statement.substring(0, 50)}...` : item.statement;
-                            output.push(`      - Context: ${item.scope || ''} - "${statementPreview}"`);
-                        } else if (category === 'liked_queries' && item.query) {
-                            const queryPreview = item.query.length > 50 ? 
-                                `${item.query.substring(0, 50)}...` : item.query;
-                            output.push(`      - Query: "${queryPreview}"`);
-                        } else if (typeof item === 'string') {
-                            output.push(`      - ${item}`);
-                        } else if (item.id || item.name) {
-                            output.push(`      - ${item.name || item.id}`);
-                        } else {
-                            output.push(`      - ${JSON.stringify(item)}`);
-                        }
-                    });
-                }
-            }
+        // Always show objects, but limit the number in normal mode
+        if (imported > 0 && Array.isArray(categoryData.imported)) {
+            output.push('\n    Imported objects:');
             
-            // In dry run mode, always show ignored objects too
-            if ((verbose || isDryRun) && ignored > 0 && Array.isArray(categoryData.ignored)) {
-                output.push('\n    Ignored objects:');
+            // Default limit for objects to show in normal mode
+            const DEFAULT_OBJECTS_LIMIT = 20;
+            const objectsLimit = verbose ? 1000 : DEFAULT_OBJECTS_LIMIT; // Only increase limit in verbose mode
+            
+            if (categoryData.imported.length > objectsLimit) {
+                // Show limited objects with a message about total
+                output.push(`      Showing ${objectsLimit} of ${categoryData.imported.length} objects:`);
                 
-                // For columns category, limit the number shown to avoid excessive output
-                const MAX_COLUMNS_TO_SHOW = 20;
+                categoryData.imported.slice(0, objectsLimit).forEach((item: any) => {
+                    // Different handling based on object type
+                    if (category === 'schema_definitions' && item.name) {
+                        output.push(`      - Schema: ${item.name}`);
+                    } else if (category === 'tables' && item.name) {
+                        const schemaPrefix = item.schema ? `${item.schema}.` : '';
+                        output.push(`      - Table: ${schemaPrefix}${item.name}`);
+                    } else if (category === 'columns' && (item.name || item.column_name)) {
+                        // Support both name and column_name properties
+                        const columnName = item.name || item.column_name;
+                        const tablePrefix = item.table || item.table_name ? `${item.table || item.table_name}.` : '';
+                        output.push(`      - Column: ${tablePrefix}${columnName}`);
+                    } else if (category === 'semantic_contexts' && item.statement) {
+                        const statementPreview = item.statement.length > 50 ? 
+                            `${item.statement.substring(0, 50)}...` : item.statement;
+                        output.push(`      - Context: ${item.scope || ''} - "${statementPreview}"`);
+                    } else if (category === 'liked_queries' && item.query) {
+                        const queryPreview = item.query.length > 50 ? 
+                            `${item.query.substring(0, 50)}...` : item.query;
+                        output.push(`      - Query: "${queryPreview}"`);
+                    } else if (typeof item === 'string') {
+                        output.push(`      - ${item}`);
+                    } else if (item.id || item.name) {
+                        output.push(`      - ${item.name || item.id}`);
+                    } else {
+                        output.push(`      - ${JSON.stringify(item)}`);
+                    }
+                });
                 
-                if (category === 'columns' && categoryData.ignored.length > MAX_COLUMNS_TO_SHOW) {
-                    // Show sample of ignored columns with a message about the total
-                    output.push(`      Showing ${MAX_COLUMNS_TO_SHOW} of ${categoryData.ignored.length} ignored columns:`);
-                    
-                    categoryData.ignored.slice(0, MAX_COLUMNS_TO_SHOW).forEach((item: any) => {
-                        if (item.name) {
-                            const tablePrefix = item.table ? `${item.table}.` : '';
-                            output.push(`      - Column: ${tablePrefix}${item.name}`);
-                        }
-                    });
-                    
-                    output.push(`      ... and ${categoryData.ignored.length - MAX_COLUMNS_TO_SHOW} more columns`);
-                } else {
-                    // Normal handling for other categories or when columns count is small
-                    categoryData.ignored.forEach((item: any) => {
-                        // Different handling based on object type
-                        if (category === 'schema_definitions' && item.name) {
-                            output.push(`      - Schema: ${item.name}`);
-                        } else if (category === 'tables' && item.name) {
-                            const schemaPrefix = item.schema ? `${item.schema}.` : '';
-                            output.push(`      - Table: ${schemaPrefix}${item.name}`);
-                        } else if (category === 'columns' && item.name) {
-                            const tablePrefix = item.table ? `${item.table}.` : '';
-                            output.push(`      - Column: ${tablePrefix}${item.name}`);
-                        } else if (category === 'semantic_contexts' && item.statement) {
-                            const statementPreview = item.statement.length > 50 ? 
-                                `${item.statement.substring(0, 50)}...` : item.statement;
-                            output.push(`      - Context: ${item.scope || ''} - "${statementPreview}"`);
-                        } else if (category === 'liked_queries' && item.query) {
-                            const queryPreview = item.query.length > 50 ? 
-                                `${item.query.substring(0, 50)}...` : item.query;
-                            output.push(`      - Query: "${queryPreview}"`);
-                        } else if (typeof item === 'string') {
-                            output.push(`      - ${item}`);
-                        } else if (item.id || item.name) {
-                            output.push(`      - ${item.name || item.id}`);
-                        } else {
-                            output.push(`      - ${JSON.stringify(item)}`);
-                        }
-                    });
-                }
+                output.push(`      ... and ${categoryData.imported.length - objectsLimit} more objects`);
+            } else {
+                // Show all objects when count is small or in verbose/dry run mode
+                categoryData.imported.forEach((item: any) => {
+                    // Different handling based on object type
+                    if (category === 'schema_definitions' && item.name) {
+                        output.push(`      - Schema: ${item.name}`);
+                    } else if (category === 'tables' && item.name) {
+                        const schemaPrefix = item.schema ? `${item.schema}.` : '';
+                        output.push(`      - Table: ${schemaPrefix}${item.name}`);
+                    } else if (category === 'columns' && (item.name || item.column_name)) {
+                        // Support both name and column_name properties
+                        const columnName = item.name || item.column_name;
+                        const tablePrefix = item.table || item.table_name ? `${item.table || item.table_name}.` : '';
+                        output.push(`      - Column: ${tablePrefix}${columnName}`);
+                    } else if (category === 'semantic_contexts' && item.statement) {
+                        const statementPreview = item.statement.length > 50 ? 
+                            `${item.statement.substring(0, 50)}...` : item.statement;
+                        output.push(`      - Context: ${item.scope || ''} - "${statementPreview}"`);
+                    } else if (category === 'liked_queries' && item.query) {
+                        const queryPreview = item.query.length > 50 ? 
+                            `${item.query.substring(0, 50)}...` : item.query;
+                        output.push(`      - Query: "${queryPreview}"`);
+                    } else if (typeof item === 'string') {
+                        output.push(`      - ${item}`);
+                    } else if (item.id || item.name) {
+                        output.push(`      - ${item.name || item.id}`);
+                    } else {
+                        output.push(`      - ${JSON.stringify(item)}`);
+                    }
+                });
+            }
+        }
+        
+        // Always show ignored objects, but limit the number in normal mode (same as imported objects)
+        if (ignored > 0 && Array.isArray(categoryData.ignored)) {
+            output.push('\n    Ignored objects:');
+            
+            // Default limit for objects to show in normal mode
+            const DEFAULT_OBJECTS_LIMIT = 20;
+            const objectsLimit = verbose ? 1000 : DEFAULT_OBJECTS_LIMIT; // Only increase limit in verbose mode
+            
+            if (categoryData.ignored.length > objectsLimit) {
+                // Show sample of ignored objects with a message about the total
+                output.push(`      Showing ${objectsLimit} of ${categoryData.ignored.length} ignored objects:`);
+                
+                categoryData.ignored.slice(0, objectsLimit).forEach((item: any) => {
+                    // Different handling based on object type
+                    if (category === 'schema_definitions' && item.name) {
+                        output.push(`      - Schema: ${item.name}`);
+                    } else if (category === 'tables' && item.name) {
+                        const schemaPrefix = item.schema ? `${item.schema}.` : '';
+                        output.push(`      - Table: ${schemaPrefix}${item.name}`);
+                    } else if (category === 'columns' && (item.name || item.column_name)) {
+                        // Support both name and column_name properties
+                        const columnName = item.name || item.column_name;
+                        const tablePrefix = item.table || item.table_name ? `${item.table || item.table_name}.` : '';
+                        output.push(`      - Column: ${tablePrefix}${columnName}`);
+                    } else if (category === 'semantic_contexts' && item.statement) {
+                        const statementPreview = item.statement.length > 50 ? 
+                            `${item.statement.substring(0, 50)}...` : item.statement;
+                        output.push(`      - Context: ${item.scope || ''} - "${statementPreview}"`);
+                    } else if (category === 'liked_queries' && item.query) {
+                        const queryPreview = item.query.length > 50 ? 
+                            `${item.query.substring(0, 50)}...` : item.query;
+                        output.push(`      - Query: "${queryPreview}"`);
+                    } else if (typeof item === 'string') {
+                        output.push(`      - ${item}`);
+                    } else if (item.id || item.name) {
+                        output.push(`      - ${item.name || item.id}`);
+                    } else {
+                        output.push(`      - ${JSON.stringify(item)}`);
+                    }
+                });
+                
+                output.push(`      ... and ${categoryData.ignored.length - objectsLimit} more objects`);
+            } else {
+                // Show all objects when count is small
+                categoryData.ignored.forEach((item: any) => {
+                    // Different handling based on object type
+                    if (category === 'schema_definitions' && item.name) {
+                        output.push(`      - Schema: ${item.name}`);
+                    } else if (category === 'tables' && item.name) {
+                        const schemaPrefix = item.schema ? `${item.schema}.` : '';
+                        output.push(`      - Table: ${schemaPrefix}${item.name}`);
+                    } else if (category === 'columns' && (item.name || item.column_name)) {
+                        // Support both name and column_name properties
+                        const columnName = item.name || item.column_name;
+                        const tablePrefix = item.table || item.table_name ? `${item.table || item.table_name}.` : '';
+                        output.push(`      - Column: ${tablePrefix}${columnName}`);
+                    } else if (category === 'semantic_contexts' && item.statement) {
+                        const statementPreview = item.statement.length > 50 ? 
+                            `${item.statement.substring(0, 50)}...` : item.statement;
+                        output.push(`      - Context: ${item.scope || ''} - "${statementPreview}"`);
+                    } else if (category === 'liked_queries' && item.query) {
+                        const queryPreview = item.query.length > 50 ? 
+                            `${item.query.substring(0, 50)}...` : item.query;
+                        output.push(`      - Query: "${queryPreview}"`);
+                    } else if (typeof item === 'string') {
+                        output.push(`      - ${item}`);
+                    } else if (item.id || item.name) {
+                        output.push(`      - ${item.name || item.id}`);
+                    } else {
+                        output.push(`      - ${JSON.stringify(item)}`);
+                    }
+                });
             }
         }
     }
@@ -556,7 +608,11 @@ const semanticLayerImport = async (params: CmdParams) => {
         
         // Search context (optional)
         const searchContext = params.opts['search_context'] ? 
-            JSON.parse(params.opts['search_context']) : [];
+            JSON.parse(params.opts['search_context']) : [{
+                db_name: "*",
+                schema_name: "*",
+                table_name: "*"
+            }];
             
         // Start import operation
         console.log(`Starting semantic layer import for database connection '${dbConnKey}'...`);
@@ -625,8 +681,7 @@ const semanticLayerImport = async (params: CmdParams) => {
                     
                     if (resultInfo) {
                         // Format the import results with verbose info or if in dry run mode
-                        const showDetails = verbose || dryRunMode;
-                        console.log(formatImportResults(resultInfo, showDetails, dryRunMode));
+                        console.log(formatImportResults(resultInfo, verbose, dryRunMode));
                         
                         // If detailed format is requested, also show the raw data
                         if (params.opts['detailed']) {
