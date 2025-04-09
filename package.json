@@ -28,7 +28,7 @@
     "ts-node": "^10.9.1",
     "uri-js": "^4.4.1",
     "uuid": "^9.0.0",
-    "waii-sdk-js": "^1.28.3",
+    "waii-sdk-js": "1.28.3-beta.12",
     "yaml": "^2.3.1"
   },
   "devDependencies": {
