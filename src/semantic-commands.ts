@@ -157,6 +157,9 @@ const contextImport = async (params: CmdParams) => {
     let importContext = JSON.parse(params.input);
     let totalCounter = 0;
     let importCounter = 0;
+    const batchSize = 10;
+    const batchedStatements: SemanticStatement[] = [];
+
 
     for (const stmt of importContext.semantic_context) {
         let found = false;
@@ -179,17 +182,27 @@ const contextImport = async (params: CmdParams) => {
                     stmt.id,
                     stmt.critical ? stmt.critical : false
                 );
-                let result = await WAII.SemanticContext.modifySemanticContext(
-                    {
-                        updated: [newStatement]
-                    }
-                );
-                importCounter = importCounter + 1;
+                batchedStatements.push(newStatement);
+                if (batchedStatements.length === batchSize) {
+                    await updateSemanticContextBatch(batchedStatements);
+                    importCounter += batchedStatements.length;
+                    batchedStatements.length = 0;
+                }
+               
             }
         }
     }
+    if (batchedStatements.length > 0) {
+        await updateSemanticContextBatch(batchedStatements);
+        importCounter += batchedStatements.length;
+    }
     console.log("Read ", totalCounter, " statement(s), ", "imported ", importCounter, " statement(s)");
 }
+const updateSemanticContextBatch = async (batch: SemanticStatement[]) => {
+    await WAII.SemanticContext.modifySemanticContext({
+        updated: batch
+    });
+};
 
 const contextAddDoc = {
     description: "Create a new semantic statement in the semantic context.",
