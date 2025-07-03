@@ -15,13 +15,13 @@
  */
 
 
-import * as fs from 'fs'
 const readline = require('readline');
 
 type CmdParams = {
     cmd: string,
     scmd: string,
     vals: string[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     opts: { [key: string]: any },
     input: string
 }
@@ -44,7 +44,7 @@ async function readStdin() {
 
 const parseInput = async (args: string[]) => {
     if (args.length < 4) {
-        throw new ArgumentError("Too few parameters.")
+        throw new ArgumentError('Too few parameters.');
     }
 
     const params: CmdParams = {
@@ -53,9 +53,9 @@ const parseInput = async (args: string[]) => {
         vals: [],
         opts: {},
         input: ''
-    }
+    };
 
-    let flags = [];
+    const flags = [];
 
     let inValues = true;
     let inFlag = false;
@@ -80,7 +80,7 @@ const parseInput = async (args: string[]) => {
         } else {
             if (a.startsWith('-')) {
                 inFlag = true;
-                flags.push({ flag: a, value: '' })
+                flags.push({ flag: a, value: '' });
             } else {
                 throw new ArgumentError('Command line flags can only have one value.');
             }
@@ -96,7 +96,7 @@ const parseInput = async (args: string[]) => {
             }
             params.opts[flagKey].push(f.value);
         } else {
-            params.opts[flagKey] = f.value
+            params.opts[flagKey] = f.value;
         }
     }
 
@@ -107,6 +107,6 @@ const parseInput = async (args: string[]) => {
     }
 
     return params;
-}
+};
 
-export { parseInput, CmdParams, ArgumentError }
+export { parseInput, CmdParams, ArgumentError };

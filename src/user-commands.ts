@@ -24,7 +24,7 @@ export type UserModel = {
     name?: string;
     tenant_id?: string;
     org_id?: string;
-    variables?: Record<string, any>;
+    variables?: Record<string, unknown>;
     roles?: string[];
 };
 
@@ -39,23 +39,23 @@ const createAccessKey = async (params: CmdParams) => {
     const keyName = params.vals[0];
 
     if (!keyName) {
-        throw new Error("Access key name is required.");
+        throw new Error('Access key name is required.');
     }
 
     // Assuming CreateAccessKeyRequest is an object that requires a `name` property.
     const createAccessKeyParams = {
-        name: keyName,
+        name: keyName
     };
 
     try {
         const result = await WAII.User.createAccessKey(createAccessKeyParams);
-        console.log("Access Key created successfully:");
+        console.log('Access Key created successfully:');
         console.log(JSON.stringify(result, null, 2));
     } catch (e) {
-        console.error("Error creating access key:");
+        console.error('Error creating access key:');
         throw e;
-        
-        
+
+
     }
 };
 
@@ -66,12 +66,13 @@ const createAccessKey = async (params: CmdParams) => {
  *
  * @param params Command parameters
  */
-const listAccessKeys = async (params: CmdParams) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const listAccessKeys = async (_params: CmdParams) => {
     try {
         const result = await WAII.User.listAccessKeys({});
 
         if (!result || !result.access_keys || result.access_keys.length === 0) {
-            console.log("No access keys found.");
+            console.log('No access keys found.');
             return;
         }
 
@@ -95,7 +96,7 @@ const listAccessKeys = async (params: CmdParams) => {
 
         p.printTable();
     } catch (error) {
-        console.error("Error listing access keys:");
+        console.error('Error listing access keys:');
         throw error;
     }
 };
@@ -111,18 +112,18 @@ const deleteAccessKey = async (params: CmdParams) => {
     const keyNames = params.vals;
 
     if (!keyNames || keyNames.length === 0) {
-        throw new Error("You must specify at least one access key name to delete.");
+        throw new Error('You must specify at least one access key name to delete.');
     }
 
     const deleteAccessKeyParams = {
-        names: keyNames,
+        names: keyNames
     };
 
     try {
-        const result = await WAII.User.deleteAccessKey(deleteAccessKeyParams);
-        console.log("Access Keys deleted successfully:", keyNames.join(", "));
+        /* const result = */ await WAII.User.deleteAccessKey(deleteAccessKeyParams);
+        console.log('Access Keys deleted successfully:', keyNames.join(', '));
     } catch (error) {
-        console.error("Error deleting access keys");
+        console.error('Error deleting access keys');
         throw error;
     }
 };
@@ -134,19 +135,20 @@ const deleteAccessKey = async (params: CmdParams) => {
  *
  * @param params Command parameters
  */
-const getUserInfo = async (params: CmdParams) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const getUserInfo = async (_params: CmdParams) => {
     try {
         const result = await WAII.User.getInfo({});
 
         if (!result) {
-            console.log("No user information found.");
+            console.log('No user information found.');
             return;
         }
 
         const p = new Table({
             columns: [
                 { name: 'Property', alignment: 'left' },
-                { name: 'Value', alignment: 'left', maxLen: 60, minLen: 40 },
+                { name: 'Value', alignment: 'left', maxLen: 60, minLen: 40 }
             ]
         });
 
@@ -158,7 +160,7 @@ const getUserInfo = async (params: CmdParams) => {
 
         p.printTable();
     } catch (error) {
-        console.error("Error retrieving user information");
+        console.error('Error retrieving user information');
         throw error;
     }
 };
@@ -171,7 +173,7 @@ const getUserInfo = async (params: CmdParams) => {
  * @param params Command parameters
  */
 const updateConfig = async (params: CmdParams) => {
-    const updates:Record<string, any> = {};
+    const updates:Record<string, unknown> = {};
     const deletions: string[] = [];
 
     // Parse options for updates and deletions
@@ -185,21 +187,21 @@ const updateConfig = async (params: CmdParams) => {
 
     const updateConfigParams = {
         updated: Object.keys(updates).length > 0 ? updates : undefined,
-        deleted: deletions.length > 0 ? deletions : undefined,
+        deleted: deletions.length > 0 ? deletions : undefined
     };
 
     try {
         const result = await WAII.User.updateConfig(updateConfigParams);
 
         if (!result || !result.configs) {
-            console.log("No configuration found.");
+            console.log('No configuration found.');
             return;
         }
 
         const p = new Table({
             columns: [
                 { name: 'Key', alignment: 'left' },
-                { name: 'Value', alignment: 'left', maxLen: 60, minLen: 40 },
+                { name: 'Value', alignment: 'left', maxLen: 60, minLen: 40 }
             ]
         });
 
@@ -209,7 +211,7 @@ const updateConfig = async (params: CmdParams) => {
 
         p.printTable();
     } catch (error) {
-        console.error("Error updating configuration");
+        console.error('Error updating configuration');
         throw error;
     }
 };
@@ -224,7 +226,7 @@ const updateConfig = async (params: CmdParams) => {
 const createUser = async (params: CmdParams) => {
     const userId = params.vals[0];
     if (!userId) {
-        throw new Error("User ID is required.");
+        throw new Error('User ID is required.');
     }
 
     const user = {
@@ -233,16 +235,16 @@ const createUser = async (params: CmdParams) => {
         tenant_id: params.opts.tenant_id || '',
         org_id: params.opts.org_id || '',
         variables: params.opts.variables ? JSON.parse(params.opts.variables) : {},
-        roles: params.opts.roles ? params.opts.roles.split(',') : [],
+        roles: params.opts.roles ? params.opts.roles.split(',') : []
     };
 
     const createUserParams = { user };
 
     try {
-        const result = await WAII.User.createUser(createUserParams);
-        console.log("User created successfully.");
+        /* const result = */ await WAII.User.createUser(createUserParams);
+        console.log('User created successfully.');
     } catch (error) {
-        console.error("Error creating user");
+        console.error('Error creating user');
         throw error;
     }
 };
@@ -257,18 +259,18 @@ const createUser = async (params: CmdParams) => {
 const deleteUser = async (params: CmdParams) => {
     const userId = params.vals[0];
     if (!userId) {
-        throw new Error("User ID is required.");
+        throw new Error('User ID is required.');
     }
 
     const deleteUserParams = {
-        id: userId,
+        id: userId
     };
 
     try {
-        const result = await WAII.User.deleteUser(deleteUserParams);
-        console.log("User deleted successfully.");
+        /* const result = */ await WAII.User.deleteUser(deleteUserParams);
+        console.log('User deleted successfully.');
     } catch (error) {
-        console.error("Error deleting user");
+        console.error('Error deleting user');
         throw error;
     }
 };
@@ -283,7 +285,7 @@ const deleteUser = async (params: CmdParams) => {
 const updateUser = async (params: CmdParams) => {
     const userId = params.vals[0];
     if (!userId) {
-        throw new Error("User ID is required.");
+        throw new Error('User ID is required.');
     }
 
     const user = {
@@ -292,16 +294,16 @@ const updateUser = async (params: CmdParams) => {
         tenant_id: params.opts.tenant_id || '',
         org_id: params.opts.org_id || '',
         variables: params.opts.variables ? JSON.parse(params.opts.variables) : {},
-        roles: params.opts.roles ? params.opts.roles.split(',') : [],
+        roles: params.opts.roles ? params.opts.roles.split(',') : []
     };
 
     const updateUserParams = { user };
 
     try {
-        const result = await WAII.User.updateUser(updateUserParams);
-        console.log("User updated successfully.");
+        /* const result = */ await WAII.User.updateUser(updateUserParams);
+        console.log('User updated successfully.');
     } catch (error) {
-        console.error("Error updating user");
+        console.error('Error updating user');
         throw error;
     }
 };
@@ -317,14 +319,14 @@ const listUsers = async (params: CmdParams) => {
     const lookupOrgId = params.opts.lookup_org_id || '';
 
     const listUsersParams = {
-        lookup_org_id: lookupOrgId,
+        lookup_org_id: lookupOrgId
     };
 
     try {
         const result = await WAII.User.listUsers(listUsersParams);
 
         if (!result || !result.users || result.users.length === 0) {
-            console.log("No users found.");
+            console.log('No users found.');
             return;
         }
 
@@ -334,7 +336,7 @@ const listUsers = async (params: CmdParams) => {
                 { name: 'Name', alignment: 'left' },
                 { name: 'Tenant ID', alignment: 'left' },
                 { name: 'Org ID', alignment: 'left' },
-                { name: 'Roles', alignment: 'left', maxLen: 60, minLen: 20 },
+                { name: 'Roles', alignment: 'left', maxLen: 60, minLen: 20 }
             ]
         });
 
@@ -344,13 +346,13 @@ const listUsers = async (params: CmdParams) => {
                 'Name': user.name || 'N/A',
                 'Tenant ID': user.tenant_id || 'N/A',
                 'Org ID': user.org_id || 'N/A',
-                'Roles': user.roles ? user.roles.join(', ') : 'N/A',
+                'Roles': user.roles ? user.roles.join(', ') : 'N/A'
             });
         });
 
         p.printTable();
     } catch (error) {
-        console.error("Error listing users");
+        console.error('Error listing users');
         throw error;
     }
 };
@@ -365,23 +367,23 @@ const listUsers = async (params: CmdParams) => {
 const createTenant = async (params: CmdParams) => {
     const tenantId = params.vals[0];
     if (!tenantId) {
-        throw new Error("Tenant ID is required.");
+        throw new Error('Tenant ID is required.');
     }
 
     const tenant = {
         id: tenantId,
         name: params.opts.name || '',
         org_id: params.opts.org_id || undefined,
-        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined,
+        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined
     };
 
     const createTenantParams = { tenant };
 
     try {
-        const result = await WAII.User.createTenant(createTenantParams);
-        console.log("Tenant created successfully.");
+        /* const result = */ await WAII.User.createTenant(createTenantParams);
+        console.log('Tenant created successfully.');
     } catch (error) {
-        console.error("Error creating tenant:");
+        console.error('Error creating tenant:');
         throw error;
     }
 };
@@ -396,23 +398,23 @@ const createTenant = async (params: CmdParams) => {
 const updateTenant = async (params: CmdParams) => {
     const tenantId = params.vals[0];
     if (!tenantId) {
-        throw new Error("Tenant ID is required.");
+        throw new Error('Tenant ID is required.');
     }
 
     const tenant = {
         id: tenantId,
         name: params.opts.name || '',
         org_id: params.opts.org_id || undefined,
-        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined,
+        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined
     };
 
     const updateTenantParams = { tenant };
 
     try {
-        const result = await WAII.User.updateTenant(updateTenantParams);
-        console.log("Tenant updated successfully.");
+        /* const result = */ await WAII.User.updateTenant(updateTenantParams);
+        console.log('Tenant updated successfully.');
     } catch (error) {
-        console.error("Error updating tenant:");
+        console.error('Error updating tenant:');
         throw error;
     }
 };
@@ -427,16 +429,16 @@ const updateTenant = async (params: CmdParams) => {
 const deleteTenant = async (params: CmdParams) => {
     const tenantId = params.vals[0];
     if (!tenantId) {
-        throw new Error("Tenant ID is required.");
+        throw new Error('Tenant ID is required.');
     }
 
     const deleteTenantParams = { id: tenantId };
 
     try {
-        const result = await WAII.User.deleteTenant(deleteTenantParams);
-        console.log("Tenant deleted successfully.");
+        /* const result = */ await WAII.User.deleteTenant(deleteTenantParams);
+        console.log('Tenant deleted successfully.');
     } catch (error) {
-        console.error("Error deleting tenant");
+        console.error('Error deleting tenant');
         throw error;
     }
 };
@@ -450,13 +452,13 @@ const deleteTenant = async (params: CmdParams) => {
  */
 const listTenants = async (params: CmdParams) => {
     const listTenantsParams = {
-        lookup_org_id: params.opts.lookup_org_id || undefined,
+        lookup_org_id: params.opts.lookup_org_id || undefined
     };
 
     try {
         const result = await WAII.User.listTenants(listTenantsParams);
         if (!result || !result.tenants || result.tenants.length === 0) {
-            console.log("No tenants found.");
+            console.log('No tenants found.');
             return;
         }
 
@@ -465,7 +467,7 @@ const listTenants = async (params: CmdParams) => {
                 { name: 'Tenant ID', alignment: 'left' },
                 { name: 'Name', alignment: 'left' },
                 { name: 'Org ID', alignment: 'left' },
-                { name: 'Variables', alignment: 'left', maxLen: 60, minLen: 20 },
+                { name: 'Variables', alignment: 'left', maxLen: 60, minLen: 20 }
             ]
         });
 
@@ -474,13 +476,13 @@ const listTenants = async (params: CmdParams) => {
                 'Tenant ID': tenant.id,
                 'Name': tenant.name || 'N/A',
                 'Org ID': tenant.org_id || 'N/A',
-                'Variables': tenant.variables ? JSON.stringify(tenant.variables) : 'N/A',
+                'Variables': tenant.variables ? JSON.stringify(tenant.variables) : 'N/A'
             });
         });
 
         p.printTable();
     } catch (error) {
-        console.error("Error listing tenants:");
+        console.error('Error listing tenants:');
         throw error;
     }
 };
@@ -495,22 +497,22 @@ const listTenants = async (params: CmdParams) => {
 const createOrganization = async (params: CmdParams) => {
     const organizationId = params.vals[0];
     if (!organizationId) {
-        throw new Error("Organization ID is required.");
+        throw new Error('Organization ID is required.');
     }
 
     const organization = {
         id: organizationId,
         name: params.opts.name || '',
-        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined,
+        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined
     };
 
     const createOrganizationParams = { organization };
 
     try {
-        const result = await WAII.User.createOrganization(createOrganizationParams);
-        console.log("Organization created successfully.");
+        /* const result = */ await WAII.User.createOrganization(createOrganizationParams);
+        console.log('Organization created successfully.');
     } catch (error) {
-        console.error("Error creating organization:");
+        console.error('Error creating organization:');
         throw error;
     }
 };
@@ -525,22 +527,22 @@ const createOrganization = async (params: CmdParams) => {
 const updateOrganization = async (params: CmdParams) => {
     const organizationId = params.vals[0];
     if (!organizationId) {
-        throw new Error("Organization ID is required.");
+        throw new Error('Organization ID is required.');
     }
 
     const organization = {
         id: organizationId,
         name: params.opts.name || '',
-        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined,
+        variables: params.opts.variables ? JSON.parse(params.opts.variables) : undefined
     };
 
     const updateOrganizationParams = { organization };
 
     try {
-        const result = await WAII.User.updateOrganization(updateOrganizationParams);
-        console.log("Organization updated successfully.");
+        /* const result = */ await WAII.User.updateOrganization(updateOrganizationParams);
+        console.log('Organization updated successfully.');
     } catch (error) {
-        console.error("Error updating organization:");
+        console.error('Error updating organization:');
         throw error;
     }
 };
@@ -555,16 +557,16 @@ const updateOrganization = async (params: CmdParams) => {
 const deleteOrganization = async (params: CmdParams) => {
     const organizationId = params.vals[0];
     if (!organizationId) {
-        throw new Error("Organization ID is required.");
+        throw new Error('Organization ID is required.');
     }
 
     const deleteOrganizationParams = { id: organizationId };
 
     try {
-        const result = await WAII.User.deleteOrganization(deleteOrganizationParams);
-        console.log("Organization deleted successfully.");
+        /* const result = */ await WAII.User.deleteOrganization(deleteOrganizationParams);
+        console.log('Organization deleted successfully.');
     } catch (error) {
-        console.error("Error deleting organization:");
+        console.error('Error deleting organization:');
         throw error;
     }
 };
@@ -576,11 +578,12 @@ const deleteOrganization = async (params: CmdParams) => {
  *
  * @param params Command parameters
  */
-const listOrganizations = async (params: CmdParams) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const listOrganizations = async (_params: CmdParams) => {
     try {
         const result = await WAII.User.listOrganizations({});
         if (!result || !result.organizations || result.organizations.length === 0) {
-            console.log("No organizations found.");
+            console.log('No organizations found.');
             return;
         }
 
@@ -588,7 +591,7 @@ const listOrganizations = async (params: CmdParams) => {
             columns: [
                 { name: 'Organization ID', alignment: 'left' },
                 { name: 'Name', alignment: 'left' },
-                { name: 'Variables', alignment: 'left', maxLen: 60, minLen: 20 },
+                { name: 'Variables', alignment: 'left', maxLen: 60, minLen: 20 }
             ]
         });
 
@@ -596,13 +599,13 @@ const listOrganizations = async (params: CmdParams) => {
             p.addRow({
                 'Organization ID': organization.id,
                 'Name': organization.name || 'N/A',
-                'Variables': organization.variables ? JSON.stringify(organization.variables) : 'N/A',
+                'Variables': organization.variables ? JSON.stringify(organization.variables) : 'N/A'
             });
         });
 
         p.printTable();
     } catch (error) {
-        console.error("Error listing organizations:");
+        console.error('Error listing organizations:');
         throw error;
     }
 };
@@ -615,230 +618,230 @@ const listOrganizations = async (params: CmdParams) => {
  * Command documentation
  */
 const createAccessKeyDoc = {
-    description: "Create a new access key for a user.",
+    description: 'Create a new access key for a user.',
     parameters: [
         {
-            name: "name",
-            type: "string",
-            description: "The name of the access key to create.",
+            name: 'name',
+            type: 'string',
+            description: 'The name of the access key to create.'
         }
     ],
-    stdin: "",
+    stdin: '',
     options: {}
 };
 
 const listAccessKeysDoc = {
-    description: "List all access keys for the user.",
+    description: 'List all access keys for the user.',
     parameters: [],
-    stdin: "",
+    stdin: '',
     options: {}
 };
 
 const deleteAccessKeyDoc = {
-    description: "Delete specified access keys for the user.",
+    description: 'Delete specified access keys for the user.',
     parameters: [
         {
-            name: "names",
-            type: "string[]",
-            description: "An array of strings denoting the names of the access keys to be deleted.",
+            name: 'names',
+            type: 'string[]',
+            description: 'An array of strings denoting the names of the access keys to be deleted.'
         }
     ],
-    stdin: "",
+    stdin: '',
     options: {}
 };
 
 const getUserInfoDoc = {
-    description: "Retrieve information about the user.",
+    description: 'Retrieve information about the user.',
     parameters: [],
-    stdin: "",
+    stdin: '',
     options: {}
 };
 
 const updateConfigDoc = {
-    description: "Update the user's configuration settings.",
+    description: 'Update the user\'s configuration settings.',
     parameters: [],
-    stdin: "",
+    stdin: '',
     options: {
-        "key=value": "Specify key-value pairs to update in the configuration.",
-        "key=delete": "Specify keys to delete from the configuration."
+        'key=value': 'Specify key-value pairs to update in the configuration.',
+        'key=delete': 'Specify keys to delete from the configuration.'
     }
 };
 
 const createUserDoc = {
-    description: "Create a new user.",
+    description: 'Create a new user.',
     parameters: [
         {
-            name: "userId",
-            type: "string",
-            description: "The unique ID of the user to be created.",
+            name: 'userId',
+            type: 'string',
+            description: 'The unique ID of the user to be created.'
         }
     ],
-    stdin: "",
+    stdin: '',
     options: {
-        "name": "The display name of the user.",
-        "tenant_id": "The tenant ID of the user.",
-        "org_id": "The organization ID of the user.",
-        "variables": "A JSON string representing the user's variables.",
-        "roles": "A comma-separated list of roles assigned to the user.",
+        'name': 'The display name of the user.',
+        'tenant_id': 'The tenant ID of the user.',
+        'org_id': 'The organization ID of the user.',
+        'variables': 'A JSON string representing the user\'s variables.',
+        'roles': 'A comma-separated list of roles assigned to the user.'
     }
 };
 
 const deleteUserDoc = {
-    description: "Delete an existing user.",
+    description: 'Delete an existing user.',
     parameters: [
         {
-            name: "userId",
-            type: "string",
-            description: "The user ID of the user to be deleted.",
+            name: 'userId',
+            type: 'string',
+            description: 'The user ID of the user to be deleted.'
         }
     ],
-    stdin: "",
+    stdin: '',
     options: {}
 };
 
 const updateUserDoc = {
-    description: "Update information about an existing user.",
+    description: 'Update information about an existing user.',
     parameters: [
         {
-            name: "userId",
-            type: "string",
-            description: "The unique ID of the user to be updated.",
+            name: 'userId',
+            type: 'string',
+            description: 'The unique ID of the user to be updated.'
         }
     ],
-    stdin: "",
+    stdin: '',
     options: {
-        "name": "The display name of the user.",
-        "tenant_id": "The tenant ID of the user.",
-        "org_id": "The organization ID of the user.",
-        "variables": "A JSON string representing the user's variables.",
-        "roles": "A comma-separated list of roles assigned to the user.",
+        'name': 'The display name of the user.',
+        'tenant_id': 'The tenant ID of the user.',
+        'org_id': 'The organization ID of the user.',
+        'variables': 'A JSON string representing the user\'s variables.',
+        'roles': 'A comma-separated list of roles assigned to the user.'
     }
 };
 
 const listUsersDoc = {
-    description: "Retrieve a list of users.",
+    description: 'Retrieve a list of users.',
     parameters: [],
-    stdin: "",
+    stdin: '',
     options: {
-        "lookup_org_id": "The organization ID for which the users are to be retrieved."
+        'lookup_org_id': 'The organization ID for which the users are to be retrieved.'
     }
 };
 const createTenantDoc = {
-    description: "Create a new tenant.",
+    description: 'Create a new tenant.',
     parameters: [
         {
-            name: "tenantId",
-            type: "string",
-            description: "The unique ID of the tenant to be created.",
+            name: 'tenantId',
+            type: 'string',
+            description: 'The unique ID of the tenant to be created.'
         }
     ],
-    stdin: "",
+    stdin: '',
     options: {
-        name: "The display name of the tenant.",
-        org_id: "The organization ID of the tenant.",
-        variables: "A JSON string representing the tenant's variables.",
+        name: 'The display name of the tenant.',
+        org_id: 'The organization ID of the tenant.',
+        variables: 'A JSON string representing the tenant\'s variables.'
     }
 };
 
 const updateTenantDoc = {
-    description: "Update an existing tenant.",
+    description: 'Update an existing tenant.',
     parameters: [
         {
-            name: "tenantId",
-            type: "string",
-            description: "The unique ID of the tenant to be updated.",
+            name: 'tenantId',
+            type: 'string',
+            description: 'The unique ID of the tenant to be updated.'
         }
     ],
-    stdin: "",
+    stdin: '',
     options: {
-        name: "The display name of the tenant.",
-        org_id: "The organization ID of the tenant.",
-        variables: "A JSON string representing the tenant's variables.",
+        name: 'The display name of the tenant.',
+        org_id: 'The organization ID of the tenant.',
+        variables: 'A JSON string representing the tenant\'s variables.'
     }
 };
 
 const deleteTenantDoc = {
-    description: "Delete an existing tenant.",
+    description: 'Delete an existing tenant.',
     parameters: [
         {
-            name: "tenantId",
-            type: "string",
-            description: "The ID of the tenant to be deleted.",
+            name: 'tenantId',
+            type: 'string',
+            description: 'The ID of the tenant to be deleted.'
         }
     ],
-    stdin: "",
+    stdin: '',
     options: {}
 };
 
 const listTenantsDoc = {
-    description: "Retrieve a list of tenants.",
+    description: 'Retrieve a list of tenants.',
     parameters: [],
-    stdin: "",
+    stdin: '',
     options: {
-        lookup_org_id: "The organization ID for which the tenants are to be retrieved."
+        lookup_org_id: 'The organization ID for which the tenants are to be retrieved.'
     }
 };
 
 const createOrganizationDoc = {
-    description: "Create a new organization.",
+    description: 'Create a new organization.',
     parameters: [
         {
-            name: "organizationId",
-            type: "string",
-            description: "The unique ID of the organization to be created.",
+            name: 'organizationId',
+            type: 'string',
+            description: 'The unique ID of the organization to be created.'
         }
     ],
     options: {
         name: {
-            type: "string",
-            description: "The display name of the organization.",
+            type: 'string',
+            description: 'The display name of the organization.'
         },
         variables: {
-            type: "string",
-            description: "A JSON string representing key-value pairs of organization variables.",
+            type: 'string',
+            description: 'A JSON string representing key-value pairs of organization variables.'
         }
     },
-    stdin: ""
+    stdin: ''
 };
 
 const updateOrganizationDoc = {
-    description: "Update an existing organization.",
+    description: 'Update an existing organization.',
     parameters: [
         {
-            name: "organizationId",
-            type: "string",
-            description: "The unique ID of the organization to be updated.",
+            name: 'organizationId',
+            type: 'string',
+            description: 'The unique ID of the organization to be updated.'
         }
     ],
     options: {
         name: {
-            type: "string",
-            description: "The display name of the organization.",
+            type: 'string',
+            description: 'The display name of the organization.'
         },
         variables: {
-            type: "string",
-            description: "A JSON string representing key-value pairs of organization variables.",
+            type: 'string',
+            description: 'A JSON string representing key-value pairs of organization variables.'
         }
     },
-    stdin: ""
+    stdin: ''
 };
 
 const deleteOrganizationDoc = {
-    description: "Delete an existing organization.",
+    description: 'Delete an existing organization.',
     parameters: [
         {
-            name: "organizationId",
-            type: "string",
-            description: "The unique ID of the organization to be deleted.",
+            name: 'organizationId',
+            type: 'string',
+            description: 'The unique ID of the organization to be deleted.'
         }
     ],
-    stdin: ""
+    stdin: ''
 };
 
 const listOrganizationsDoc = {
-    description: "List all organizations.",
+    description: 'List all organizations.',
     parameters: [],
-    stdin: ""
+    stdin: ''
 };
 
 
@@ -858,7 +861,7 @@ const userCommands = {
     update_config: { fn: updateConfig, doc: updateConfigDoc },
     create: { fn: createUser, doc: createUserDoc },
     delete: { fn: deleteUser, doc: deleteUserDoc },
-    update: { fn: updateUser, doc: updateUserDoc }, 
+    update: { fn: updateUser, doc: updateUserDoc },
     list: {fn: listUsers, doc: listUsersDoc},
     create_tenant: { fn: createTenant, doc: createTenantDoc },
     update_tenant: { fn: updateTenant, doc: updateTenantDoc },

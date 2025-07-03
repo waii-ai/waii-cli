@@ -15,11 +15,11 @@
  */
 
 
-import WAII from 'waii-sdk-js'
+import WAII from 'waii-sdk-js';
 import { GeneratedQueryHistoryEntry } from 'waii-sdk-js/dist/clients/history/src/History';
 import { CmdParams } from './cmd-line-parser';
-import { Table } from "console-table-printer";
-import { printQuery } from "./query-commands";
+import { Table } from 'console-table-printer';
+import { printQuery } from './query-commands';
 
 /**
  * "," is commonly presently in SQL & cause difficulty in parsing.
@@ -45,7 +45,7 @@ const printHistory = (history: GeneratedQueryHistoryEntry[]) => {
         const p = new Table({
             columns: [
                 { name: 'property', alignment: 'left' },
-                { name: 'value', alignment: 'left', maxLen: 60, minLen: 40 },
+                { name: 'value', alignment: 'left', maxLen: 60, minLen: 40 }
             ], rowSeparator: true
         });
 
@@ -57,34 +57,34 @@ const printHistory = (history: GeneratedQueryHistoryEntry[]) => {
         p.addRow({
             property: 'favorite',
             value: entry.query.liked ? 'true' : 'false'
-        })
+        });
         p.addRow({
             property: 'question',
             value: entry.request.ask.replace(/\n/g, '\\n')
-        })
+        });
         p.addRow({
             property: 'tables',
-            value: entry.query.tables?.map((t) => t.schema_name + '.' + t.table_name).join(" ")
-        })
+            value: entry.query.tables?.map((t) => t.schema_name + '.' + t.table_name).join(' ')
+        });
         p.printTable();
-        console.log("Query: ")
-        console.log("```")
+        console.log('Query: ');
+        console.log('```');
         printQuery(entry.query.query);
-        console.log("```")
+        console.log('```');
 
         // print separator
-        console.log("------------------------------------------------------------");
+        console.log('------------------------------------------------------------');
     }
-}
+};
 
 const historyListDoc = {
-    description: "Show the query history.",
+    description: 'Show the query history.',
     parameters: [],
-    stdin: "",
+    stdin: '',
     options: {
-        format: "choose the format of the response: text or json.",
-        limit: "choose how many items to list.",
-        liked: "only display liked queries"
+        format: 'choose the format of the response: text or json.',
+        limit: 'choose how many items to list.',
+        liked: 'only display liked queries'
     }
 };
 
@@ -93,17 +93,17 @@ function stringToBoolean(str: string) {
 }
 
 const historyList = async (params: CmdParams) => {
-    let limit = 10
+    let limit = 10;
     if (params.opts['limit']) {
-        limit = parseInt(params.opts['limit'])
+        limit = parseInt(params.opts['limit']);
     }
-    let liked = false
+    let liked = false;
     if (params.opts['liked']) {
-        liked = stringToBoolean(params.opts['liked'])
+        liked = stringToBoolean(params.opts['liked']);
     }
 
 
-    let result = await WAII.History.get({
+    const result = await WAII.History.get({
         limit: limit,
         liked_query_filter: liked,
         included_types: ['query']
@@ -116,12 +116,12 @@ const historyList = async (params: CmdParams) => {
         }
         default: {
             if (!result.history) {
-                throw new Error("No history found.");
+                throw new Error('No history found.');
             }
             printHistory(result.history as GeneratedQueryHistoryEntry[]);
         }
     }
-}
+};
 
 const historyCommands = {
     list: { fn: historyList, doc: historyListDoc }

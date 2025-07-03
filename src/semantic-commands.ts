@@ -15,19 +15,19 @@
  */
 
 
-import WAII from 'waii-sdk-js'
+import WAII from 'waii-sdk-js';
 import { CmdParams } from './cmd-line-parser';
-import { GetSemanticContextResponse, SemanticStatement } from "waii-sdk-js/dist/clients/semantic-context/src/SemanticContext";
-import { Table } from "console-table-printer";
-import { IIndexable } from "./query-commands";
+import { GetSemanticContextResponse, SemanticStatement } from 'waii-sdk-js/dist/clients/semantic-context/src/SemanticContext';
+import { Table } from 'console-table-printer';
+
 
 function processForTable(input: string | undefined, n: number): string {
-  
+
     if (!input) {
         return '';
     }
 
-    let s = input.replace(/(\r\n|\n|\r)/gm, "").trim();
+    const s = input.replace(/(\r\n|\n|\r)/gm, '').trim();
     const words = s.split(/\s+/);
     const processedWords = words.map(word => {
       if (word.length > n) {
@@ -38,13 +38,13 @@ function processForTable(input: string | undefined, n: number): string {
 
     return processedWords.join(' ');
   }
-  
+
 const printStatements = (statements?: SemanticStatement[], total?: number) => {
     if (!statements) {
-        console.log("No statements found.");
+        console.log('No statements found.');
         return;
     }
-    
+
     const p = new Table({
         columns: [
             //{ name: 'id', alignment: 'left', maxLen: 10, minLen: 1 },
@@ -72,34 +72,35 @@ const printStatements = (statements?: SemanticStatement[], total?: number) => {
 
     if (total) {
         console.log();
-        console.log(total + " additional statements available");
+        console.log(total + ' additional statements available');
     }
-}
+};
 
 function stringToBoolean(str: string): boolean {
     return /^(true|1|yes|y)$/i.test(str.trim());
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function load_context(spec: any):Promise<GetSemanticContextResponse> {
     let remaining = spec.limit;
 
     // first try to load limit 0 to get the total number of statements
-    spec.limit = 0
-    let result = await WAII.SemanticContext.getSemanticContext(spec);
+    spec.limit = 0;
+    const result = await WAII.SemanticContext.getSemanticContext(spec);
 
     if (spec.offset == null) {
         spec.offset = 0;
     }
 
     // we won't load more than total available statements
-    let total_available = result.available_statements ? result.available_statements : 0;
+    const total_available = result.available_statements ? result.available_statements : 0;
     if (total_available < remaining) {
         remaining = total_available;
     }
 
     while (remaining > 0) {
         spec.limit = Math.min(remaining, 1000);
-        let batch_result = await WAII.SemanticContext.getSemanticContext(spec);
+        const batch_result = await WAII.SemanticContext.getSemanticContext(spec);
         if (batch_result.semantic_context && batch_result.semantic_context.length > 0) {
             // append the batch results to the final result
             result.semantic_context = [...(result.semantic_context ? result.semantic_context : []), ...(batch_result.semantic_context ? batch_result.semantic_context : [])];
@@ -116,38 +117,39 @@ async function load_context(spec: any):Promise<GetSemanticContextResponse> {
 }
 
 const contextListDoc = {
-    description: "List all semantic context of the current database.",
+    description: 'List all semantic context of the current database.',
     parameters: [],
-    stdin: "",
+    stdin: '',
     options: {
-        limit: "How many statements to fetch",
-        offset: "Which statement to start with",
-        search: "Which string to search for in the statements",
-        always_include: "Filter that decides which type of statement to fetch",
-        format: "Choose the format of the response: text or json."
+        limit: 'How many statements to fetch',
+        offset: 'Which statement to start with',
+        search: 'Which string to search for in the statements',
+        always_include: 'Filter that decides which type of statement to fetch',
+        format: 'Choose the format of the response: text or json.'
     }
 };
 const contextList = async (params: CmdParams) => {
 
-    let always_include: boolean | null = 'always_include' in params.opts ? stringToBoolean(params.opts['always_include']) : null;
-    let search: string = 'search' in params.opts ? params.opts['search'] : '';
-    let offset: number = 'offset' in params.opts ? +params.opts['offset'] : 0;
-    let limit: number = 'limit' in params.opts ? +params.opts['limit'] : 100;
+    const always_include: boolean | null = 'always_include' in params.opts ? stringToBoolean(params.opts['always_include']) : null;
+    const search: string = 'search' in params.opts ? params.opts['search'] : '';
+    const offset: number = 'offset' in params.opts ? +params.opts['offset'] : 0;
+    const limit: number = 'limit' in params.opts ? +params.opts['limit'] : 100;
 
-    let spec: any = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const spec: any = {
         search_text: search,
         offset: offset,
         limit: limit
     };
 
     if (always_include !== null) {
-        let filter = {
+        const filter = {
             always_include: always_include
         };
         spec.filter = filter;
     }
-    
-    let result = await load_context(spec);
+
+    const result = await load_context(spec);
 
     switch (params.opts['format']) {
         case 'json': {
@@ -158,12 +160,12 @@ const contextList = async (params: CmdParams) => {
             printStatements(result?.semantic_context, result?.available_statements);
         }
     }
-}
+};
 
 const contextImportDoc = {
-    description: "Import semantic statements in bulk. Duplicates will be ignored.",
+    description: 'Import semantic statements in bulk. Duplicates will be ignored.',
     parameters: [],
-    stdin: "The statements to load. The input must be of the format returned by 'waii context list'.",
+    stdin: 'The statements to load. The input must be of the format returned by \'waii context list\'.',
     options: {
     }
 };
@@ -171,7 +173,7 @@ const contextImport = async (params: CmdParams) => {
     let context = await load_context({limit: 1});
     context = await load_context({limit: context.available_statements});
 
-    let importContext = JSON.parse(params.input);
+    const importContext = JSON.parse(params.input);
     let totalCounter = 0;
     let importCounter = 0;
 
@@ -186,7 +188,7 @@ const contextImport = async (params: CmdParams) => {
                 }
             }
             if (!found) {
-                let newStatement: SemanticStatement = new SemanticStatement(
+                const newStatement: SemanticStatement = new SemanticStatement(
                     stmt.scope,
                     stmt.statement,
                     stmt.labels,
@@ -196,7 +198,7 @@ const contextImport = async (params: CmdParams) => {
                     stmt.id,
                     stmt.critical ? stmt.critical : false
                 );
-                let result = await WAII.SemanticContext.modifySemanticContext(
+                /* const result = */ await WAII.SemanticContext.modifySemanticContext(
                     {
                         updated: [newStatement]
                     }
@@ -205,24 +207,24 @@ const contextImport = async (params: CmdParams) => {
             }
         }
     }
-    console.log("Read ", totalCounter, " statement(s), ", "imported ", importCounter, " statement(s)");
-}
+    console.log('Read ', totalCounter, ' statement(s), ', 'imported ', importCounter, ' statement(s)');
+};
 
 const contextAddDoc = {
-    description: "Create a new semantic statement in the semantic context.",
-    parameters: [""],
-    stdin: "",
+    description: 'Create a new semantic statement in the semantic context.',
+    parameters: [''],
+    stdin: '',
     options: {
-        format: "choose the format of the response: text or json.",
-        scope: "The scope of the statement: [[[[<db>].<schema>].<table>].<column>]",
-        labels: "Comma separated list of labels for the statement: 'performance, finance'",
-        always_include: "Whether the statement should be dynamically selected by query or always included.",
-        lookup_summaries: "Comma separated list of summaries to use.",
-        summarization_prompt: "Prompt to be used to extract information when the statement is used."
+        format: 'choose the format of the response: text or json.',
+        scope: 'The scope of the statement: [[[[<db>].<schema>].<table>].<column>]',
+        labels: 'Comma separated list of labels for the statement: \'performance, finance\'',
+        always_include: 'Whether the statement should be dynamically selected by query or always included.',
+        lookup_summaries: 'Comma separated list of summaries to use.',
+        summarization_prompt: 'Prompt to be used to extract information when the statement is used.'
     }
 };
 const contextAdd = async (params: CmdParams) => {
-    let stmt: SemanticStatement = new SemanticStatement(
+    const stmt: SemanticStatement = new SemanticStatement(
         params.opts['scope'],
         params.vals[0],
         'labels' in params.opts ? params.opts['labels'].split(',').map((s: string) => s.trim()) : [],
@@ -231,7 +233,7 @@ const contextAdd = async (params: CmdParams) => {
         params.opts['summarization_prompt']
     );
 
-    let result = await WAII.SemanticContext.modifySemanticContext(
+    const result = await WAII.SemanticContext.modifySemanticContext(
         {
             updated: [stmt]
         }
@@ -245,18 +247,18 @@ const contextAdd = async (params: CmdParams) => {
             printStatements(result.updated);
         }
     }
-}
+};
 
 const contextDeleteDoc = {
-    description: "Delete a statement from the semantic context.",
-    parameters: ["uuid of the statement to be deleted."],
-    stdin: "",
+    description: 'Delete a statement from the semantic context.',
+    parameters: ['uuid of the statement to be deleted.'],
+    stdin: '',
     options: {
-        format: "choose the format of the response: text or json."
+        format: 'choose the format of the response: text or json.'
     }
 };
 const contextDelete = async (params: CmdParams) => {
-    let result = await WAII.SemanticContext.modifySemanticContext({
+    const result = await WAII.SemanticContext.modifySemanticContext({
         updated: [],
         deleted: params.vals
     });
@@ -269,33 +271,34 @@ const contextDelete = async (params: CmdParams) => {
             printStatements(result.updated);
         }
     }
-}
+};
 
 const contextDeleteAllDoc = {
-    description: "Delete all added semantic contexts from the database",
-    stdin: ""
+    description: 'Delete all added semantic contexts from the database',
+    stdin: ''
 };
-const contextDeleteAll = async (params: CmdParams) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const contextDeleteAll = async (_params: CmdParams) => {
     // first print a warning and ask user to confirm the deletion, type 'yes' to confirm
-    console.log("Warning: This will delete all added semantic contexts from the database.");
-    console.log("Type 'yes' to confirm deletion:");
-    let input = await new Promise<string>((resolve) => {
+    console.log('Warning: This will delete all added semantic contexts from the database.');
+    console.log('Type \'yes\' to confirm deletion:');
+    const input = await new Promise<string>((resolve) => {
         process.stdin.once('data', (data) => {
             resolve(data.toString().trim());
         });
     });
     if (input !== 'yes') {
-        console.log("Aborted..");
+        console.log('Aborted..');
         return;
     }
 
     while (true) {
-        let all_contexts = await WAII.SemanticContext.getSemanticContext({});
+        const all_contexts = await WAII.SemanticContext.getSemanticContext({});
         if (!all_contexts.semantic_context) {
             break;
         }
 
-        let all_contexts_ids = []
+        const all_contexts_ids = [];
         for (const stmt of all_contexts.semantic_context) {
             if (stmt.id) {
                 all_contexts_ids.push(stmt.id);
@@ -303,22 +306,22 @@ const contextDeleteAll = async (params: CmdParams) => {
         }
 
         if (all_contexts.semantic_context && all_contexts.semantic_context.length > 0) {
-            let result = await WAII.SemanticContext.modifySemanticContext({
+            const result = await WAII.SemanticContext.modifySemanticContext({
                 updated: [],
                 deleted: all_contexts_ids
             });
 
             if (result.deleted && result.deleted.length > 0) {
-                console.log("Deleted ", result.deleted.length, " statement(s)");
+                console.log('Deleted ', result.deleted.length, ' statement(s)');
             } else {
-                console.log("No statements left to delete");
-                return
+                console.log('No statements left to delete');
+                return;
             }
         } else {
             break;
         }
     }
-}
+};
 
 const semanticCommands = {
     list: { fn: contextList, doc: contextListDoc },

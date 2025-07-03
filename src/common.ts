@@ -15,36 +15,36 @@
  */
 
 
-const WAII_TRIAL_USER = 'waii-trial-user'
-const WAII_TRAIL_API_USER = 'waii-trial-api-user'
-const WAII_USER = 'waii-user'
-const WAII_API_USER = 'waii-api-user'
-const WAII_ADMIN_USER = 'waii-admin-user'
-const WAII_ORG_ADMIN_USER = 'waii-org-admin-user'
-const WAII_SUPER_ADMIN_USER = 'waii-super-admin-user'
+const WAII_TRIAL_USER = 'waii-trial-user';
+const WAII_TRAIL_API_USER = 'waii-trial-api-user';
+const WAII_USER = 'waii-user';
+const WAII_API_USER = 'waii-api-user';
+const WAII_ADMIN_USER = 'waii-admin-user';
+const WAII_ORG_ADMIN_USER = 'waii-org-admin-user';
+const WAII_SUPER_ADMIN_USER = 'waii-super-admin-user';
 
-const READ_SEMANTIC_CONTEXT = 'read:semantic-context'
-const READ_LIKED_QUERIES = 'read:liked-queries'
-const READ_DATABASES = 'read:databases'
-const WRITE_LIKED_QUERIES = 'write:liked-queries'
-const WRITE_SEMANTIC_CONTEXT = 'write:semantic-context'
-const WRITE_DATABASES = 'write:databases'
-const PUSH_DATABASES = 'push:databases'
-const WRITE_SIMILARITY_SEARCH_INDEX = 'write:similarity-search-index'
-const READ_SIMILARITY_SEARCH_INDEX = 'read:similarity-search-index'
-const USAGE_API = 'usage:api'
-const WRITE_ACCESS_KEY = 'write:access_key'
-const PUBLISH_SEMANTIC_CONTEXT = 'publish:semantic-context'
-const PUBLISH_LIKED_QUERIES = 'publish:liked-queries'
-const PUBLISH_TABLE_ACCESS_RULES = 'publish:access-rules'
-const READ_USER = 'read:user'
-const READ_TENANT = 'read:tenant'
-const READ_ORG = 'read:org'
-const WRITE_USER = 'write:user'
-const WRITE_TENANT = 'write:tenant'
-const WRITE_ORG = 'write:org'
-const USAGE_IMPERSONATION = 'usage:impersonation'
-const READ_USAGE_REPORT = 'read:usage-report'
+const READ_SEMANTIC_CONTEXT = 'read:semantic-context';
+const READ_LIKED_QUERIES = 'read:liked-queries';
+const READ_DATABASES = 'read:databases';
+const WRITE_LIKED_QUERIES = 'write:liked-queries';
+const WRITE_SEMANTIC_CONTEXT = 'write:semantic-context';
+const WRITE_DATABASES = 'write:databases';
+const PUSH_DATABASES = 'push:databases';
+const WRITE_SIMILARITY_SEARCH_INDEX = 'write:similarity-search-index';
+const READ_SIMILARITY_SEARCH_INDEX = 'read:similarity-search-index';
+const USAGE_API = 'usage:api';
+const WRITE_ACCESS_KEY = 'write:access_key';
+const PUBLISH_SEMANTIC_CONTEXT = 'publish:semantic-context';
+const PUBLISH_LIKED_QUERIES = 'publish:liked-queries';
+const PUBLISH_TABLE_ACCESS_RULES = 'publish:access-rules';
+const READ_USER = 'read:user';
+const READ_TENANT = 'read:tenant';
+const READ_ORG = 'read:org';
+const WRITE_USER = 'write:user';
+const WRITE_TENANT = 'write:tenant';
+const WRITE_ORG = 'write:org';
+const USAGE_IMPERSONATION = 'usage:impersonation';
+const READ_USAGE_REPORT = 'read:usage-report';
 
 export const WaiiRoles = {
     WAII_ADMIN_USER,
@@ -54,7 +54,7 @@ export const WaiiRoles = {
     WAII_USER,
     WAII_TRAIL_API_USER,
     WAII_TRIAL_USER
-}
+};
 
 export const WaiiPermissions = {
     READ_SEMANTIC_CONTEXT,
@@ -79,9 +79,9 @@ export const WaiiPermissions = {
     WRITE_ORG,
     USAGE_IMPERSONATION,
     READ_USAGE_REPORT
-}
+};
 
-const ROLE_RANKS: {[key: string]: number} = {}
+const ROLE_RANKS: {[key: string]: number} = {};
 
 ROLE_RANKS[WAII_TRIAL_USER] = 1;
 ROLE_RANKS[WAII_TRAIL_API_USER] = 1;
@@ -91,4 +91,4 @@ ROLE_RANKS[WAII_ADMIN_USER] = 4;
 ROLE_RANKS[WAII_ORG_ADMIN_USER] = 5;
 ROLE_RANKS[WAII_SUPER_ADMIN_USER] = 6;
 
-export { ROLE_RANKS }
+export { ROLE_RANKS };
