@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
  * Copyright 2023–2025 Waii, Inc.
  *
@@ -13,9 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-#!/usr/bin/env node
 
 import WAII from 'waii-sdk-js'
 import process = require("node:process")
