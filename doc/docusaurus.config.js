@@ -1,6 +1,24 @@
-const {themes} = require('prism-react-renderer');
-const lightCodeTheme = themes.github;
-const darkCodeTheme = themes.dracula;
+let lightCodeTheme, darkCodeTheme;
+try {
+  const {themes} = require('prism-react-renderer');
+  lightCodeTheme = themes.github;
+  darkCodeTheme = themes.dracula;
+} catch (e) {
+  lightCodeTheme = {
+    plain: {
+      color: "#393A34",
+      backgroundColor: "#f6f8fa"
+    },
+    styles: []
+  };
+  darkCodeTheme = {
+    plain: {
+      color: "#F8F8F2",
+      backgroundColor: "#282A36"
+    },
+    styles: []
+  };
+}
 
 (module.exports = {
 	title: 'Waii CLI',
