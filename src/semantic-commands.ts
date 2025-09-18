@@ -194,10 +194,7 @@ const contextImport = async (params: CmdParams) => {
                     stmt.labels,
                     stmt.always_include,
                     stmt.lookup_summaries,
-                    stmt.summarization_prompt,
-                    stmt.id,
-                    stmt.critical ? stmt.critical : false,
-                    stmt.semantic_constraint
+                    stmt.summarization_prompt
                 );
                 /* const result = */ await WAII.SemanticContext.modifySemanticContext(
                     {
